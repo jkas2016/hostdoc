@@ -1,0 +1,19 @@
+# Node
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Terraform (commit .terraform.lock.hcl; ignore provider cache, state, and local vars)
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+terraform.tfvars
+crash.log
+
+# Secrets / env
+.env
+.env.local
+
+# OS / editor
+.DS_Store
+Thumbs.db
