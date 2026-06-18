@@ -1,0 +1,38 @@
+import type { Upload } from "./walk.js";
+
+export interface Meta {
+  code: string;
+  slug: string | null;
+  title: string | null;
+  createdAt: string; // ISO 8601
+  files: number;
+  bytes: number;
+  sourcePath: string;
+}
+
+export function metaKey(code: string): string {
+  return `_meta/${code}.json`;
+}
+
+export function extractTitle(html: string): string | null {
+  const m = html.match(/<title>([\s\S]*?)<\/title>/i);
+  return m ? m[1].trim() : null;
+}
+
+export function buildMeta(args: {
+  code: string;
+  slug: string | null;
+  title: string | null;
+  uploads: Upload[];
+  sourcePath: string;
+}): Meta {
+  return {
+    code: args.code,
+    slug: args.slug,
+    title: args.title,
+    createdAt: new Date().toISOString(),
+    files: args.uploads.length,
+    bytes: args.uploads.reduce((sum, u) => sum + u.size, 0),
+    sourcePath: args.sourcePath,
+  };
+}
