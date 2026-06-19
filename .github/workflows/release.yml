@@ -1,0 +1,32 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run (compute next version + notes, publish nothing)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write        # GitHub Release, tag, and commit-back
+  issues: write          # comment on released issues
+  pull-requests: write   # comment on released PRs
+  id-token: write        # npm OIDC trusted publishing + provenance
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0           # semantic-release needs full history + tags
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22          # ≥ 22.14 (semantic-release engines + OIDC)
+      - run: npm install -g npm@latest   # ≥ 11.5.1 for OIDC (Node 22 ships npm 10)
+      - run: npm ci
+      - run: npm run build
+      - run: npx semantic-release ${{ inputs.dry_run && '--dry-run' || '' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

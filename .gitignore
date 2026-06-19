@@ -14,6 +14,9 @@ crash.log
 .env
 .env.local
 
+# graphify generated knowledge-graph output
+graphify-out/
+
 # OS / editor
 .DS_Store
 Thumbs.db
