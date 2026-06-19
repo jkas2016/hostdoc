@@ -2,6 +2,10 @@
   "name": "hostdoc",
   "version": "0.1.0",
   "description": "Publish a local HTML file or folder to your own AWS and get a short shareable link.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jkas2016/hostdoc.git"
+  },
   "type": "module",
   "bin": {
     "hostdoc": "dist/index.js"
