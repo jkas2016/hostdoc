@@ -53,6 +53,8 @@ hostdoc publish ./mydoc      # → https://<subdomain>.<domain>/<code>/
 Already provisioned the infra yourself? Import it without applying:
 `hostdoc init --from-terraform ./infra`.
 
+Tear it all down with `hostdoc deprovision` (or `hostdoc deprovision --approve` non-interactively).
+
 Overwriting (`--force`) and `hostdoc rm` automatically invalidate
 `/<code>/*` on the distribution.
 
