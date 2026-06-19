@@ -20,6 +20,7 @@
     "dev": "node --import tsx src/index.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-cloudfront": "^3.1072.0",
     "@aws-sdk/client-s3": "^3.1071.0",
     "@aws-sdk/credential-providers": "^3.1071.0",
     "commander": "^15.0.0",

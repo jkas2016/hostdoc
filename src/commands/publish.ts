@@ -5,6 +5,7 @@ import { generateCode, isValidSlug } from "../lib/code.js";
 import { collectUploads, type Upload } from "../lib/walk.js";
 import { buildMeta, metaKey, extractTitle } from "../lib/meta.js";
 import { buildPublicUrl } from "../lib/url.js";
+import { makeCloudFront, invalidate } from "../lib/cloudfront.js";
 import type { S3Client } from "@aws-sdk/client-s3";
 
 export interface PublishArgs {
@@ -64,9 +65,13 @@ export async function runPublish(args: PublishArgs): Promise<string> {
     return buildPublicUrl(cfg, code);
   }
 
+  let overwritten = false;
   if (args.force) {
     const existing = await listKeys(s3, cfg.bucket, `${code}/`);
-    if (existing.length) await deleteKeys(s3, cfg.bucket, existing);
+    if (existing.length) {
+      await deleteKeys(s3, cfg.bucket, existing);
+      overwritten = true;
+    }
   }
 
   for (const u of uploads) {
@@ -94,6 +99,11 @@ export async function runPublish(args: PublishArgs): Promise<string> {
     Buffer.from(JSON.stringify(meta, null, 2)),
     "application/json",
   );
+
+  if (cfg.mode === "cloudfront" && cfg.distributionId && overwritten) {
+    const cf = makeCloudFront({ profile: args.profile });
+    await invalidate(cf, cfg.distributionId, [`/${code}/*`]);
+  }
 
   return buildPublicUrl(cfg, code);
 }

@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 import { Command, type OptionValues } from "commander";
 import { runSetup } from "./commands/setup.js";
+import { runInit } from "./commands/init.js";
+import { runProvision } from "./commands/provision.js";
+import { runDeprovision } from "./commands/deprovision.js";
 import { runPublish } from "./commands/publish.js";
 import { listDocs, formatRows } from "./commands/list.js";
 import { runRm } from "./commands/rm.js";
@@ -53,6 +56,53 @@ program
       console.log(`Created s3-website bucket "${cfg.bucket}".`);
       console.log(`Public base: ${cfg.websiteEndpoint}/`);
       console.log("Note: this bucket serves content publicly over HTTP.");
+    } catch (err) {
+      fail(err);
+    }
+  });
+
+program
+  .command("init")
+  .description("Import domain (Terraform) infra outputs and write a cloudfront config")
+  .requiredOption("--from-terraform <dir>", "path to the Terraform infra directory")
+  .action((opts) => {
+    try {
+      const cfg = runInit({ dir: opts.fromTerraform });
+      console.log(
+        `Wrote cloudfront config for ${cfg.domain} (distribution ${cfg.distributionId}).`,
+      );
+    } catch (err) {
+      fail(err);
+    }
+  });
+
+program
+  .command("provision")
+  .description("Provision domain infra via Terraform (init + apply) and write a cloudfront config")
+  .option("--dir <dir>", "Terraform infra directory", "./infra")
+  .option("--approve", "auto-approve terraform apply (non-interactive; for agents/automation)")
+  .action((opts) => {
+    try {
+      const cfg = runProvision({ dir: opts.dir, approve: opts.approve });
+      console.log(
+        `Provisioned ${cfg.domain}; cloudfront config written (distribution ${cfg.distributionId}).`,
+      );
+    } catch (err) {
+      fail(err);
+    }
+  });
+
+program
+  .command("deprovision")
+  .description("Tear down the domain infra via Terraform (destroy)")
+  .option("--dir <dir>", "Terraform infra directory", "./infra")
+  .option("--approve", "auto-approve terraform destroy (non-interactive; for agents/automation)")
+  .action((opts) => {
+    try {
+      runDeprovision({ dir: opts.dir, approve: opts.approve });
+      console.log(
+        "Domain infrastructure destroyed. Run `hostdoc provision` to recreate it.",
+      );
     } catch (err) {
       fail(err);
     }
