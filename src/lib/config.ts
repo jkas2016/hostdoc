@@ -65,7 +65,7 @@ export function resolveConfig(flags: Overrides): Config {
       mode: "s3-website",
       bucket,
       region,
-      websiteEndpoint: file?.websiteEndpoint ?? websiteEndpoint(bucket, region),
+      websiteEndpoint: websiteEndpoint(bucket, region),
     };
   }
 

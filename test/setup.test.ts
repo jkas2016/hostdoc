@@ -37,9 +37,11 @@ describe("runSetup", () => {
     const policy = JSON.parse(
       s3mock.commandCalls(PutBucketPolicyCommand)[0].args[0].input.Policy!,
     );
-    const sids = policy.Statement.map((s: { Sid: string }) => s.Sid);
-    expect(sids).toContain("PublicReadGetObject");
-    expect(sids).toContain("DenyMetaPrefix");
+    const stmt = policy.Statement[0];
+    expect(stmt.Sid).toBe("PublicReadExceptMeta");
+    expect(stmt.Effect).toBe("Allow");
+    expect(stmt.Action).toBe("s3:GetObject");
+    expect(stmt.NotResource).toContain("/_meta/*");
 
     expect(cfg.mode).toBe("s3-website");
     expect(loadConfig()).toEqual(cfg);

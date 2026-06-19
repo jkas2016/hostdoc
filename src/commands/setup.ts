@@ -57,18 +57,15 @@ export async function runSetup(args: {
     Version: "2012-10-17",
     Statement: [
       {
-        Sid: "PublicReadGetObject",
+        Sid: "PublicReadExceptMeta",
         Effect: "Allow",
         Principal: "*",
         Action: "s3:GetObject",
-        Resource: `arn:aws:s3:::${bucket}/*`,
-      },
-      {
-        Sid: "DenyMetaPrefix",
-        Effect: "Deny",
-        Principal: "*",
-        Action: "s3:GetObject",
-        Resource: `arn:aws:s3:::${bucket}/_meta/*`,
+        // Public read for everything EXCEPT the private _meta/ prefix.
+        // An explicit Deny would also block the bucket owner (the CLI's own
+        // credentials), breaking `list`; NotResource keeps _meta out of the
+        // public grant while the owner still reads it via account ownership.
+        NotResource: `arn:aws:s3:::${bucket}/_meta/*`,
       },
     ],
   };
