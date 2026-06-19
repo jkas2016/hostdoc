@@ -20,6 +20,7 @@ describe("runDeprovision", () => {
     const destroyIdx = argLists.findIndex((a) => a.includes("destroy"));
     expect(initIdx).toBeGreaterThanOrEqual(0);
     expect(destroyIdx).toBeGreaterThan(initIdx); // init before destroy
+    expect(argLists[initIdx]).toContain("-input=false");
     expect(argLists[destroyIdx]).toContain("-chdir=./infra");
     expect(argLists[destroyIdx]).not.toContain("-auto-approve"); // interactive by default
   });
@@ -42,5 +43,12 @@ describe("runDeprovision", () => {
       (c[1] as string[]).includes("destroy"),
     );
     expect(reachedDestroy).toBe(false);
+  });
+
+  it("reports a friendly error when terraform is not installed", () => {
+    mockExec.mockImplementation(() => {
+      throw Object.assign(new Error("spawnSync terraform ENOENT"), { code: "ENOENT" });
+    });
+    expect(() => runDeprovision({ dir: "./infra" })).toThrow(/terraform is not installed/i);
   });
 });

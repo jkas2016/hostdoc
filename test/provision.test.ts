@@ -32,6 +32,7 @@ describe("runProvision", () => {
     expect(initIdx).toBeGreaterThanOrEqual(0);
     expect(applyIdx).toBeGreaterThan(initIdx); // init before apply
     expect(argLists[initIdx]).toContain("-chdir=./infra");
+    expect(argLists[initIdx]).toContain("-input=false");
     expect(argLists[applyIdx]).not.toContain("-auto-approve"); // interactive by default
 
     expect(cfg.mode).toBe("cloudfront");
@@ -58,5 +59,12 @@ describe("runProvision", () => {
       (c[1] as string[]).includes("apply"),
     );
     expect(reachedApply).toBe(false);
+  });
+
+  it("reports a friendly error when terraform is not installed", () => {
+    mockExec.mockImplementation(() => {
+      throw Object.assign(new Error("spawnSync terraform ENOENT"), { code: "ENOENT" });
+    });
+    expect(() => runProvision({ dir: "./infra" })).toThrow(/terraform is not installed/i);
   });
 });
