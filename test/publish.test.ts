@@ -8,14 +8,18 @@ import {
   PutObjectCommand,
   ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
+import { CloudFrontClient, CreateInvalidationCommand } from "@aws-sdk/client-cloudfront";
 import { runPublish } from "../src/commands/publish.js";
 
 const s3mock = mockClient(S3Client);
+const cfMock = mockClient(CloudFrontClient);
 let dir: string;
 beforeEach(() => {
   s3mock.reset();
   s3mock.on(ListObjectsV2Command).resolves({ KeyCount: 0, Contents: [] });
   s3mock.on(PutObjectCommand).resolves({});
+  cfMock.reset();
+  cfMock.on(CreateInvalidationCommand).resolves({});
   dir = mkdtempSync(join(tmpdir(), "sf-pub-"));
   process.env.HOSTDOC_BUCKET = "b";
   process.env.HOSTDOC_REGION = "us-east-1";
@@ -60,5 +64,40 @@ describe("runPublish", () => {
     writeFileSync(join(dir, "index.html"), "x");
     await runPublish({ path: dir, slug: "doc1", dryRun: true });
     expect(s3mock.commandCalls(PutObjectCommand)).toHaveLength(0);
+  });
+
+  it("invalidates /<code>/* when overwriting in cloudfront mode", async () => {
+    process.env.HOSTDOC_DOMAIN = "shared.example.com";
+    process.env.HOSTDOC_DISTRIBUTION = "DIST1";
+    s3mock.on(ListObjectsV2Command).resolves({
+      KeyCount: 1,
+      Contents: [{ Key: "doc1/index.html" }],
+      IsTruncated: false,
+    });
+    writeFileSync(join(dir, "index.html"), "x");
+
+    await runPublish({ path: dir, slug: "doc1", force: true });
+
+    const calls = cfMock.commandCalls(CreateInvalidationCommand);
+    expect(calls).toHaveLength(1);
+    expect(calls[0].args[0].input.InvalidationBatch?.Paths?.Items).toEqual([
+      "/doc1/*",
+    ]);
+
+    delete process.env.HOSTDOC_DOMAIN;
+    delete process.env.HOSTDOC_DISTRIBUTION;
+  });
+
+  it("does not invalidate on a fresh publish (no overwrite)", async () => {
+    process.env.HOSTDOC_DOMAIN = "shared.example.com";
+    process.env.HOSTDOC_DISTRIBUTION = "DIST1";
+    writeFileSync(join(dir, "index.html"), "x");
+
+    await runPublish({ path: dir, slug: "fresh1" });
+
+    expect(cfMock.commandCalls(CreateInvalidationCommand)).toHaveLength(0);
+
+    delete process.env.HOSTDOC_DOMAIN;
+    delete process.env.HOSTDOC_DISTRIBUTION;
   });
 });
