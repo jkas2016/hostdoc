@@ -28,7 +28,44 @@ hostdoc open aws-design
 hostdoc rm aws-design --yes
 ```
 
-Note: no-domain mode serves content **publicly over HTTP** (S3 website endpoints do not support HTTPS). For public-facing HTTPS use the upcoming domain mode.
+Note: no-domain mode serves content **publicly over HTTP** (S3 website endpoints do not support HTTPS). For public-facing HTTPS, see [Domain mode](#domain-mode-https-via-cloudfront) below.
+
+## Domain mode (HTTPS via CloudFront)
+
+Domain mode serves your docs over HTTPS from a fully private S3 bucket fronted
+by CloudFront (OAC). It is provisioned with Terraform.
+
+**Prerequisites:** a Route53 hosted zone for your domain, AWS credentials, and
+Terraform installed.
+
+```bash
+cd infra
+cp terraform.tfvars.example terraform.tfvars
+# edit terraform.tfvars: hosted_zone_name, subdomain, aws_region
+terraform init
+terraform apply            # CloudFront + ACM validation take ~15-30 min
+cd ..
+
+hostdoc init --from-terraform ./infra   # writes a cloudfront config
+hostdoc publish ./mydoc                  # → https://<subdomain>.<domain>/<code>/
+```
+
+Overwriting (`--force`) and `hostdoc rm` automatically invalidate
+`/<code>/*` on the distribution.
+
+### External (non-Route53) DNS
+
+Automated ACM validation and alias records require a Route53 hosted zone. If
+your domain is hosted elsewhere (e.g. Cloudflare), provisioning is manual:
+add the ACM validation CNAME shown by AWS, then point your subdomain at the
+CloudFront distribution domain via a CNAME/ALIAS record. This is outside the
+automated path.
+
+### Security note
+
+The Terraform `publisher_policy_json` output is a minimal IAM policy for
+publishing. Prefer a dedicated IAM user (`create_publisher_user = true`) over
+root credentials for day-to-day `hostdoc` use.
 
 ## Credentials
 
