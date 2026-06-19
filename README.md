@@ -42,13 +42,16 @@ Terraform installed.
 cd infra
 cp terraform.tfvars.example terraform.tfvars
 # edit terraform.tfvars: hosted_zone_name, subdomain, aws_region
-terraform init
-terraform apply            # CloudFront + ACM validation take ~15-30 min
 cd ..
 
-hostdoc init --from-terraform ./infra   # writes a cloudfront config
-hostdoc publish ./mydoc                  # → https://<subdomain>.<domain>/<code>/
+hostdoc provision            # runs terraform init + apply, then writes the config (~15-30 min)
+# non-interactive (e.g. driving hostdoc from an agent):
+#   hostdoc provision --approve
+hostdoc publish ./mydoc      # → https://<subdomain>.<domain>/<code>/
 ```
+
+Already provisioned the infra yourself? Import it without applying:
+`hostdoc init --from-terraform ./infra`.
 
 Overwriting (`--force`) and `hostdoc rm` automatically invalidate
 `/<code>/*` on the distribution.

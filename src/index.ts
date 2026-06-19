@@ -2,6 +2,7 @@
 import { Command, type OptionValues } from "commander";
 import { runSetup } from "./commands/setup.js";
 import { runInit } from "./commands/init.js";
+import { runProvision } from "./commands/provision.js";
 import { runPublish } from "./commands/publish.js";
 import { listDocs, formatRows } from "./commands/list.js";
 import { runRm } from "./commands/rm.js";
@@ -68,6 +69,22 @@ program
       const cfg = runInit({ dir: opts.fromTerraform });
       console.log(
         `Wrote cloudfront config for ${cfg.domain} (distribution ${cfg.distributionId}).`,
+      );
+    } catch (err) {
+      fail(err);
+    }
+  });
+
+program
+  .command("provision")
+  .description("Provision domain infra via Terraform (init + apply) and write a cloudfront config")
+  .option("--dir <dir>", "Terraform infra directory", "./infra")
+  .option("--approve", "auto-approve terraform apply (non-interactive; for agents/automation)")
+  .action((opts) => {
+    try {
+      const cfg = runProvision({ dir: opts.dir, approve: opts.approve });
+      console.log(
+        `Provisioned ${cfg.domain}; cloudfront config written (distribution ${cfg.distributionId}).`,
       );
     } catch (err) {
       fail(err);
