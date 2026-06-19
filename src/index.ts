@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { Command, type OptionValues } from "commander";
 import { runSetup } from "./commands/setup.js";
+import { runInit } from "./commands/init.js";
 import { runPublish } from "./commands/publish.js";
 import { listDocs, formatRows } from "./commands/list.js";
 import { runRm } from "./commands/rm.js";
@@ -53,6 +54,21 @@ program
       console.log(`Created s3-website bucket "${cfg.bucket}".`);
       console.log(`Public base: ${cfg.websiteEndpoint}/`);
       console.log("Note: this bucket serves content publicly over HTTP.");
+    } catch (err) {
+      fail(err);
+    }
+  });
+
+program
+  .command("init")
+  .description("Import domain (Terraform) infra outputs and write a cloudfront config")
+  .requiredOption("--from-terraform <dir>", "path to the Terraform infra directory")
+  .action((opts) => {
+    try {
+      const cfg = runInit({ dir: opts.fromTerraform });
+      console.log(
+        `Wrote cloudfront config for ${cfg.domain} (distribution ${cfg.distributionId}).`,
+      );
     } catch (err) {
       fail(err);
     }
