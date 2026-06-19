@@ -1,0 +1,4 @@
+hosted_zone_name = "example.com"     # existing Route53 hosted zone
+subdomain        = "shared"          # → shared.example.com
+aws_region       = "us-east-1"       # bucket region (cert is always us-east-1)
+price_class      = "PriceClass_100"  # cheapest CloudFront tier
