@@ -51,9 +51,9 @@ Expected: six `ok …` lines, no error. (Confirms the bundled npm/github/analyze
 
 Run:
 ```bash
-node -p "require('@semantic-release/npm/package.json').version"
+npm ls @semantic-release/npm
 ```
-Expected: `13.1.x` (≥ 13.1.0). If lower, bump `semantic-release`.
+Expected: the dependency tree lists `@semantic-release/npm@13.1.x` (≥ 13.1.0). If lower, bump `semantic-release`.
 
 - [ ] **Step 4: Add the `prepack` build hook**
 
@@ -286,7 +286,7 @@ git commit -m "docs: add releasing + npm OIDC bootstrap runbook"
   ```
   Expected in the log: semantic-release computes the next version (`1.0.0` on first run) and release notes; **no publish**, no tag.
 
-- [ ] **Step 4: Verify the commit-back loop is blocked** — confirm `ci.yml` does NOT run on a `chore(release): … [skip ci]` commit. (Checked after Step 5 produces the commit-back; inspect `gh run list --workflow=ci.yml`.)
+- [ ] **Step 4: Verify the commit-back loop is blocked** — confirm `ci.yml` does NOT run on a `chore(release): … [skip ci]` commit. (Checked after Step 5 produces the commit-back; inspect `gh run list --workflow=ci.yml`.) Also confirm `ci.yml` is not triggered by the `v1.0.0` tag push: `ci.yml` triggers on a bare `push:` (which includes tags), and the tagged commit carries `[skip ci]`, so GitHub should suppress the run — verify this is the case via `gh run list --workflow=ci.yml` after Step 5 completes.
 
 - [ ] **Step 5: First real release** — dispatch with `dry_run = false`:
   ```bash
