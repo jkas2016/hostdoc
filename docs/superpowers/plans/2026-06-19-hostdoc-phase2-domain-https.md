@@ -1057,3 +1057,19 @@ Run: `cd infra && terraform destroy; cd ..`  (검증용 리소스 제거. 유지
 ## 실행 의존성
 
 `Task 1 → 2`(무효화 소비), `Task 4 → 5`(function 파일 참조). `Task 3`은 독립. 권장 순서: 1 → 2 → 3 → 4 → 5 → 6 → 7.
+
+---
+
+### Task 6B: `hostdoc provision` command (CLI drives terraform apply)
+
+> Added after review per user directive: the CLI must drive `terraform apply` (every flow doubles as a CLI test); the user runs a hostdoc command rather than typing terraform directly. README's domain-mode flow updated to use `hostdoc provision`.
+
+**Files:** Create `src/commands/provision.ts`, `test/provision.test.ts`; Modify `src/index.ts`, `README.md`.
+
+**Interface produced:** `runProvision(args: { dir: string; approve?: boolean }): Config` — runs `terraform -chdir=<dir> init -input=false`, then `terraform -chdir=<dir> apply` (stdio inherited so terraform's plan+confirm streams; `--approve` appends `-auto-approve` for non-interactive/agent use), then delegates to `runInit({ dir })` to read outputs and write the cloudfront config.
+
+TDD: mock `node:child_process` (branch on args: an `output` invocation returns the outputs fixture, init/apply return ""). Assert init→apply ordering, `-auto-approve` only when `approve`, fail-fast if init fails (apply not reached), and that a cloudfront config is written. Live verification (T7) runs the real `hostdoc provision --approve` (agent-driven, non-interactive).
+
+### Task 6C: `hostdoc deprovision` command (CLI drives terraform destroy)
+
+> Added per user directive — symmetric CLI-driven teardown for `provision`. `runDeprovision({ dir, approve })` runs `terraform init` then `terraform destroy` (stream prompt; `--approve` → `-auto-approve`). TDD with mocked `node:child_process` (init→destroy ordering, auto-approve gating, fail-fast). README gets a one-line teardown note. Live verification: `hostdoc deprovision --approve` tears down shared.yeonigi.com.
