@@ -109,10 +109,23 @@ program
   .command("deprovision")
   .description("Tear down the domain infra via Terraform (destroy)")
   .option("--dir <dir>", "Terraform infra directory", "./infra")
+  .option("--hosted-zone <zone>", "existing Route53 hosted zone (domain mode)")
+  .option("--subdomain <sub>", "subdomain; the site is <subdomain>.<hosted-zone>")
+  .option("--region <region>", "AWS region for the S3 bucket (cert is always us-east-1)")
+  .option("--price-class <class>", "CloudFront price class (default PriceClass_100)")
   .option("--approve", "auto-approve terraform destroy (non-interactive; for agents/automation)")
   .action((opts) => {
     try {
-      runDeprovision({ dir: opts.dir, approve: opts.approve });
+      runDeprovision({
+        dir: opts.dir,
+        approve: opts.approve,
+        flags: {
+          hostedZone: opts.hostedZone,
+          subdomain: opts.subdomain,
+          region: opts.region,
+          priceClass: opts.priceClass,
+        },
+      });
       console.log(
         "Domain infrastructure destroyed. Run `hostdoc provision` to recreate it.",
       );
