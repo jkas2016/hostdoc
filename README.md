@@ -44,18 +44,22 @@ hostdoc provision \
   --hosted-zone example.com \
   --subdomain shared \
   --region us-east-1
-# extracts bundled Terraform into ./infra, writes terraform.tfvars from the
-# flags, then runs terraform init + apply and saves the config (~15-30 min).
+# extracts bundled Terraform into ~/.local/state/hostdoc/infra, writes
+# terraform.tfvars from the flags, then runs terraform init + apply and saves
+# the config (~15-30 min).
 # non-interactive (e.g. driving hostdoc from an agent): add --approve
 hostdoc publish ./mydoc      # → https://shared.example.com/<code>/
 ```
 
-The templates land in `./infra` by default (override with `--dir`). Re-running
-`provision` never clobbers an `./infra` you have already edited. Optional
+The templates land in a per-user, cwd-independent directory by default —
+`$XDG_STATE_HOME/hostdoc/infra` (i.e. `~/.local/state/hostdoc/infra`) — so the
+single local `terraform.tfstate` is reused no matter where you run `hostdoc`
+from, and `deprovision` always finds it. Override with `--dir`. Re-running
+`provision` never clobbers a dir you have already edited. Optional
 `--price-class` overrides the default `PriceClass_100`.
 
 Already provisioned the infra yourself? Import it without applying:
-`hostdoc init --from-terraform ./infra`.
+`hostdoc init --from-terraform <dir>`.
 
 Tear it all down with `hostdoc deprovision` (it reuses the `terraform.tfvars`
 written during provision; or pass the same flags). Add `--approve` to run it

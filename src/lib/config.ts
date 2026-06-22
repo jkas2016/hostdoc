@@ -28,6 +28,19 @@ export function configPath(): string {
   return join(base, "hostdoc", "config.json");
 }
 
+/**
+ * Default Terraform working directory: a per-user, cwd-independent location so
+ * one machine has a single infra dir (and a single local `terraform.tfstate`)
+ * no matter where `hostdoc` is run from. Terraform state is "current state of
+ * the application", so it belongs under XDG_STATE_HOME (default
+ * `~/.local/state`), separate from config. Override per-invocation with `--dir`.
+ */
+export function infraDir(): string {
+  const base =
+    process.env.XDG_STATE_HOME || join(homedir(), ".local", "state");
+  return join(base, "hostdoc", "infra");
+}
+
 export function saveConfig(cfg: Config): void {
   const p = configPath();
   mkdirSync(dirname(p), { recursive: true });

@@ -4,6 +4,7 @@ import { runSetup } from "./commands/setup.js";
 import { runInit } from "./commands/init.js";
 import { runProvision } from "./commands/provision.js";
 import { runDeprovision } from "./commands/deprovision.js";
+import { infraDir } from "./lib/config.js";
 import { runPublish } from "./commands/publish.js";
 import { listDocs, formatRows } from "./commands/list.js";
 import { runRm } from "./commands/rm.js";
@@ -79,7 +80,7 @@ program
 program
   .command("provision")
   .description("Provision domain infra via Terraform (init + apply) and write a cloudfront config")
-  .option("--dir <dir>", "Terraform infra directory", "./infra")
+  .option("--dir <dir>", "Terraform infra directory (default: per-user state dir)", infraDir())
   .option("--hosted-zone <zone>", "existing Route53 hosted zone (domain mode)")
   .option("--subdomain <sub>", "subdomain; the site is <subdomain>.<hosted-zone>")
   .option("--region <region>", "AWS region for the S3 bucket (cert is always us-east-1)")
@@ -108,7 +109,7 @@ program
 program
   .command("deprovision")
   .description("Tear down the domain infra via Terraform (destroy)")
-  .option("--dir <dir>", "Terraform infra directory", "./infra")
+  .option("--dir <dir>", "Terraform infra directory (default: per-user state dir)", infraDir())
   .option("--hosted-zone <zone>", "existing Route53 hosted zone (domain mode)")
   .option("--subdomain <sub>", "subdomain; the site is <subdomain>.<hosted-zone>")
   .option("--region <region>", "AWS region for the S3 bucket (cert is always us-east-1)")
