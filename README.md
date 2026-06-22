@@ -36,24 +36,30 @@ Domain mode serves your docs over HTTPS from a fully private S3 bucket fronted
 by CloudFront (OAC). It is provisioned with Terraform.
 
 **Prerequisites:** a Route53 hosted zone for your domain, AWS credentials, and
-Terraform installed.
+Terraform installed. No repo checkout needed — the Terraform templates ship
+with the npm package and are extracted for you.
 
 ```bash
-cd infra
-cp terraform.tfvars.example terraform.tfvars
-# edit terraform.tfvars: hosted_zone_name, subdomain, aws_region
-cd ..
-
-hostdoc provision            # runs terraform init + apply, then writes the config (~15-30 min)
-# non-interactive (e.g. driving hostdoc from an agent):
-#   hostdoc provision --approve
-hostdoc publish ./mydoc      # → https://<subdomain>.<domain>/<code>/
+hostdoc provision \
+  --hosted-zone example.com \
+  --subdomain shared \
+  --region us-east-1
+# extracts bundled Terraform into ./infra, writes terraform.tfvars from the
+# flags, then runs terraform init + apply and saves the config (~15-30 min).
+# non-interactive (e.g. driving hostdoc from an agent): add --approve
+hostdoc publish ./mydoc      # → https://shared.example.com/<code>/
 ```
+
+The templates land in `./infra` by default (override with `--dir`). Re-running
+`provision` never clobbers an `./infra` you have already edited. Optional
+`--price-class` overrides the default `PriceClass_100`.
 
 Already provisioned the infra yourself? Import it without applying:
 `hostdoc init --from-terraform ./infra`.
 
-Tear it all down with `hostdoc deprovision` (or `hostdoc deprovision --approve` non-interactively).
+Tear it all down with `hostdoc deprovision` (it reuses the `terraform.tfvars`
+written during provision; or pass the same flags). Add `--approve` to run it
+non-interactively.
 
 Overwriting (`--force`) and `hostdoc rm` automatically invalidate
 `/<code>/*` on the distribution.
