@@ -1,9 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdtempSync, rmSync, existsSync, readFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { tmpdir, homedir } from "node:os";
 import { join } from "node:path";
 import {
   configPath,
+  infraDir,
   saveConfig,
   loadConfig,
   resolveConfig,
@@ -13,6 +14,7 @@ import {
 let dir: string;
 const ENV_KEYS = [
   "XDG_CONFIG_HOME",
+  "XDG_STATE_HOME",
   "HOSTDOC_BUCKET",
   "HOSTDOC_REGION",
   "HOSTDOC_DOMAIN",
@@ -39,6 +41,19 @@ afterEach(() => {
 describe("configPath", () => {
   it("is under XDG_CONFIG_HOME/hostdoc", () => {
     expect(configPath()).toBe(join(dir, "hostdoc", "config.json"));
+  });
+});
+
+describe("infraDir", () => {
+  it("is under XDG_STATE_HOME/hostdoc/infra when set", () => {
+    process.env.XDG_STATE_HOME = dir;
+    expect(infraDir()).toBe(join(dir, "hostdoc", "infra"));
+  });
+  it("falls back to ~/.local/state/hostdoc/infra (cwd-independent) when unset", () => {
+    // XDG_STATE_HOME is deleted in beforeEach.
+    const got = infraDir();
+    expect(got).toBe(join(homedir(), ".local", "state", "hostdoc", "infra"));
+    expect(got).not.toContain(process.cwd());
   });
 });
 
