@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/jkas2016/hostdoc/compare/v1.0.0...v1.0.1) (2026-06-22)
+
+
+### Bug Fixes
+
+* bundle Terraform templates so npm-installed users can run provision ([#8](https://github.com/jkas2016/hostdoc/issues/8)) ([#9](https://github.com/jkas2016/hostdoc/issues/9)) ([a249347](https://github.com/jkas2016/hostdoc/commit/a249347d40f36977f2f1296e1206eb7555769266))
+
 # 1.0.0 (2026-06-19)
 
 
