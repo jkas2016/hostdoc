@@ -16,7 +16,7 @@ export function credsPresent(env = process.env, home = homedir()) {
 
 export function configPresent(env = process.env) {
   const [cmd, ...prefix] = resolveRunner(env);
-  const res = spawnSync(cmd, [...prefix, "config"], { encoding: "utf8", env });
+  const res = spawnSync(cmd, [...prefix, "config"], { encoding: "utf8", env, timeout: 10000 });
   return res.status === 0 && /mode:/.test(res.stdout || "");
 }
 
