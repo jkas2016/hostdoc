@@ -27,6 +27,9 @@ describe("run.mjs", () => {
       HOSTDOC_BUCKET: "demo-bucket",
       HOSTDOC_REGION: "us-east-1",
     };
+    // run.mjs uses stdio:"inherit" for stdout; because spawnSync here wraps run.mjs
+    // in its own subprocess, run.mjs's stdout is the pipe spawnSync opened, so the
+    // grandchild CLI's inherited stdout still flows back into res.stdout.
     const res = spawnSync("node", [runMjs, "config"], { encoding: "utf8", env });
     expect(res.status).toBe(0);
     expect(res.stdout).toContain("mode: s3-website");

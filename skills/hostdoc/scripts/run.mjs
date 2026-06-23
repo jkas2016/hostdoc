@@ -41,9 +41,9 @@ export function classifyError(stderr) {
 function main(argv) {
   const [cmd, ...prefix] = resolveRunner();
   const child = spawn(cmd, [...prefix, ...argv], { stdio: ["inherit", "inherit", "pipe"] });
-  let err = "";
+  const errChunks = [];
   child.stderr.on("data", (d) => {
-    err += d;
+    errChunks.push(d);
     process.stderr.write(d);
   });
   child.on("error", (e) => {
@@ -52,7 +52,7 @@ function main(argv) {
   });
   child.on("close", (code) => {
     if (code !== 0) {
-      const hint = classifyError(err);
+      const hint = classifyError(Buffer.concat(errChunks).toString());
       if (hint) process.stderr.write(`\nhostdoc-skill: ${hint}\n`);
     }
     process.exit(code ?? 1);
