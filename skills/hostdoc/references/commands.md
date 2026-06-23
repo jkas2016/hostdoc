@@ -32,7 +32,3 @@ All commands run as `node <skill>/scripts/run.mjs <command> [args…]`.
 - `rm` prompts unless `--yes` is passed.
 - `provision` is long-running (~15–30 min); its output streams live through the
   wrapper.
-
-> Note: `publish --dry-run` currently still makes an AWS call to check slug/code
-> availability, so it needs valid credentials. (Tracked as a separate CLI
-> follow-up to make dry-run fully offline.)

@@ -22,6 +22,8 @@ hostdoc setup --bucket my-unique-bucket --region us-east-1
 hostdoc publish ./report.html            # → http://<bucket>.s3-website-...amazonaws.com/<code>/
 hostdoc publish ./site/ --slug aws-design
 
+`--dry-run` prints the URL it *would* publish to without uploading — and without any AWS call, so it works offline / with no credentials configured.
+
 # 3) Manage
 hostdoc list
 hostdoc open aws-design
