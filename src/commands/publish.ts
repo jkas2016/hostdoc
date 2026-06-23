@@ -52,13 +52,15 @@ export async function runPublish(args: PublishArgs): Promise<string> {
         `Invalid slug "${args.slug}". Use lowercase letters, digits, and hyphens (must start alphanumeric).`,
       );
     }
-    const exists = await existsPrefix(s3, cfg.bucket, `${args.slug}/`);
-    if (exists && !args.force) {
-      throw new Error(`Slug "${args.slug}" already exists. Use --force to overwrite.`);
+    if (!args.dryRun) {
+      const exists = await existsPrefix(s3, cfg.bucket, `${args.slug}/`);
+      if (exists && !args.force) {
+        throw new Error(`Slug "${args.slug}" already exists. Use --force to overwrite.`);
+      }
     }
     code = args.slug;
   } else {
-    code = await uniqueCode(s3, cfg.bucket);
+    code = args.dryRun ? generateCode() : await uniqueCode(s3, cfg.bucket);
   }
 
   if (args.dryRun) {

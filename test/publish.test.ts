@@ -60,10 +60,29 @@ describe("runPublish", () => {
     await expect(runPublish({ path: dir, slug: "doc1" })).rejects.toThrow(/force/);
   });
 
-  it("dry-run uploads nothing", async () => {
+  it("dry-run with a slug returns the URL and makes zero AWS calls", async () => {
     writeFileSync(join(dir, "index.html"), "x");
-    await runPublish({ path: dir, slug: "doc1", dryRun: true });
+    const url = await runPublish({ path: dir, slug: "doc1", dryRun: true });
+    expect(url).toBe("http://b.s3-website-us-east-1.amazonaws.com/doc1/");
+    expect(s3mock.commandCalls(ListObjectsV2Command)).toHaveLength(0);
     expect(s3mock.commandCalls(PutObjectCommand)).toHaveLength(0);
+  });
+
+  it("dry-run without a slug returns a well-formed URL and makes zero AWS calls", async () => {
+    writeFileSync(join(dir, "index.html"), "x");
+    const url = await runPublish({ path: dir, dryRun: true });
+    expect(url).toMatch(
+      /^http:\/\/b\.s3-website-us-east-1\.amazonaws\.com\/[0-9a-zA-Z]{7}\/$/,
+    );
+    expect(s3mock.commandCalls(ListObjectsV2Command)).toHaveLength(0);
+    expect(s3mock.commandCalls(PutObjectCommand)).toHaveLength(0);
+  });
+
+  it("dry-run still rejects a structurally invalid slug", async () => {
+    writeFileSync(join(dir, "index.html"), "x");
+    await expect(
+      runPublish({ path: dir, slug: "Bad Slug", dryRun: true }),
+    ).rejects.toThrow(/slug/i);
   });
 
   it("invalidates /<code>/* when overwriting in cloudfront mode", async () => {
