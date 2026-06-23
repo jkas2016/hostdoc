@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -62,5 +62,25 @@ describe("preflight.mjs", () => {
     expect(res.stderr).toMatch(/No hostdoc config/i);
     expect(res.stderr).toMatch(/No AWS credentials/i);
     expect(res.stderr).not.toMatch(/\bat .*:\d+:\d+/); // no JS stack frames
+  });
+});
+
+describe("skill structure", () => {
+  const skillDir = join(repo, "skills", "hostdoc");
+  it("has SKILL.md with name+description frontmatter", () => {
+    const fm = readFileSync(join(skillDir, "SKILL.md"), "utf8").match(/^---\n([\s\S]*?)\n---/);
+    expect(fm).toBeTruthy();
+    expect(fm![1]).toMatch(/^name:\s*hostdoc\s*$/m);
+    expect(fm![1]).toMatch(/^description:\s*\S+/m);
+  });
+  it("ships the wrapper scripts and references", () => {
+    for (const f of [
+      "scripts/run.mjs",
+      "scripts/preflight.mjs",
+      "references/commands.md",
+      "references/troubleshooting.md",
+    ]) {
+      expect(existsSync(join(skillDir, f))).toBe(true);
+    }
   });
 });
