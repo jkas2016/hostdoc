@@ -1,3 +1,11 @@
+# [1.1.0](https://github.com/jkas2016/hostdoc/compare/v1.0.1...v1.1.0) (2026-06-23)
+
+
+### Features
+
+* make `publish --dry-run` AWS-free (offline URL preview) ([#11](https://github.com/jkas2016/hostdoc/issues/11)) ([#12](https://github.com/jkas2016/hostdoc/issues/12)) ([c7109eb](https://github.com/jkas2016/hostdoc/commit/c7109eb5fa3f5acfbb5bb61b8b3cb30fe1f8ae05))
+* wrap the hostdoc CLI as an installable agent skill ([#5](https://github.com/jkas2016/hostdoc/issues/5)) ([#10](https://github.com/jkas2016/hostdoc/issues/10)) ([ec087aa](https://github.com/jkas2016/hostdoc/commit/ec087aaa247b7227d5bd708d9d51d062675fd848))
+
 ## [1.0.1](https://github.com/jkas2016/hostdoc/compare/v1.0.0...v1.0.1) (2026-06-22)
 
 
