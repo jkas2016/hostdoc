@@ -82,6 +82,24 @@ The Terraform `publisher_policy_json` output is a minimal IAM policy for
 publishing. Prefer a dedicated IAM user (`create_publisher_user = true`) over
 root credentials for day-to-day `hostdoc` use.
 
+## Use with an agent (skill)
+
+`hostdoc` ships an installable [agent skill](https://vercel.com/docs/agent-resources/skills)
+so coding agents can drive it conversationally — "publish this folder", "list my
+docs", "remove that slug" — without memorizing flags.
+
+```bash
+npx skills add jkas2016/hostdoc
+```
+
+This installs the `hostdoc` skill into your agent. The skill shells out to the
+`hostdoc` CLI, preferring a global install and falling back to `npx -y hostdoc`,
+so **no global install is required**. It runs an AWS-free preflight check and
+turns missing config/credentials into guidance instead of raw errors.
+
+Example prompts: *"publish ./report.html and give me the link"*, *"list my
+published docs"*, *"open aws-design"*, *"remove aws-design"*.
+
 ## Credentials
 
 `hostdoc` never stores AWS keys. It uses the AWS SDK default credential chain (environment variables → SSO → shared `~/.aws` profile). Select a profile with `--profile <name>` and a region with `--region <region>`.
