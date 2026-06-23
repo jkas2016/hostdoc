@@ -46,3 +46,21 @@ describe("run.mjs", () => {
     expect(res.stderr).toContain("CredentialsProviderError"); // raw output preserved
   });
 });
+
+const preflightMjs = join(repo, "skills", "hostdoc", "scripts", "preflight.mjs");
+
+describe("preflight.mjs", () => {
+  it("reports missing config and credentials as guidance, not a stack trace", () => {
+    const env = {
+      PATH: process.env.PATH,
+      HOME: tmp, // empty temp home → no ~/.aws
+      HOSTDOC_BIN: devBin,
+      XDG_CONFIG_HOME: tmp, // empty → no saved config, no HOSTDOC_* set
+    };
+    const res = spawnSync("node", [preflightMjs], { encoding: "utf8", env });
+    expect(res.status).toBe(1);
+    expect(res.stderr).toMatch(/No hostdoc config/i);
+    expect(res.stderr).toMatch(/No AWS credentials/i);
+    expect(res.stderr).not.toMatch(/\bat .*:\d+:\d+/); // no JS stack frames
+  });
+});
