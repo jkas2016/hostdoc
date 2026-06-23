@@ -28,6 +28,8 @@ hostdoc open aws-design
 hostdoc rm aws-design --yes
 ```
 
+`--dry-run` prints the URL it *would* publish to without uploading — and without any AWS call, so it works offline / with no credentials configured.
+
 Note: no-domain mode serves content **publicly over HTTP** (S3 website endpoints do not support HTTPS). For public-facing HTTPS, see [Domain mode](#domain-mode-https-via-cloudfront) below.
 
 ## Domain mode (HTTPS via CloudFront)
