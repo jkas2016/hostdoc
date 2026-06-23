@@ -1,9 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { resolveRunner, onPath, classifyError } from "../skills/hostdoc/scripts/run.mjs";
 
 const repo = join(dirname(fileURLToPath(import.meta.url)), "..");
 const runMjs = join(repo, "skills", "hostdoc", "scripts", "run.mjs");
@@ -82,5 +83,70 @@ describe("skill structure", () => {
     ]) {
       expect(existsSync(join(skillDir, f))).toBe(true);
     }
+  });
+});
+
+describe("run.mjs unit (pure)", () => {
+  let unitTmp: string;
+  beforeEach(() => {
+    unitTmp = mkdtempSync(join(tmpdir(), "hostdoc-unit-"));
+  });
+  afterEach(() => {
+    rmSync(unitTmp, { recursive: true, force: true });
+  });
+
+  describe("resolveRunner", () => {
+    it("HOSTDOC_BIN set → splits on whitespace into argv", () => {
+      const env = { HOSTDOC_BIN: "node /x/cli.js" };
+      expect(resolveRunner(env)).toEqual(["node", "/x/cli.js"]);
+    });
+
+    it("no HOSTDOC_BIN, hostdoc NOT on PATH → ['npx','-y','hostdoc']", () => {
+      // unitTmp is an empty directory; hostdoc is not in it
+      const env = { PATH: unitTmp };
+      expect(resolveRunner(env)).toEqual(["npx", "-y", "hostdoc"]);
+    });
+
+    it("no HOSTDOC_BIN, hostdoc present on PATH → ['hostdoc']", () => {
+      const bin = join(unitTmp, "hostdoc");
+      writeFileSync(bin, "#!/bin/sh\n");
+      chmodSync(bin, 0o755);
+      const env = { PATH: unitTmp };
+      expect(resolveRunner(env)).toEqual(["hostdoc"]);
+    });
+  });
+
+  describe("onPath", () => {
+    it("returns true when the named file exists in a PATH dir", () => {
+      const bin = join(unitTmp, "mytool");
+      writeFileSync(bin, "#!/bin/sh\n");
+      chmodSync(bin, 0o755);
+      expect(onPath("mytool", { PATH: unitTmp })).toBe(true);
+    });
+
+    it("returns false when the named file is absent from PATH", () => {
+      expect(onPath("mytool", { PATH: unitTmp })).toBe(false);
+    });
+  });
+
+  describe("classifyError", () => {
+    it("returns credentials guidance for CredentialsProviderError", () => {
+      const result = classifyError("CredentialsProviderError: token expired");
+      expect(result).toMatch(/credentials are missing or expired/i);
+    });
+
+    it("returns no-config guidance for 'No configuration found'", () => {
+      const result = classifyError("No configuration found. Please run setup.");
+      expect(result).toContain("No hostdoc config found");
+    });
+
+    it("returns slug guidance for 'Slug \"x\" already exists'", () => {
+      const result = classifyError('Slug "x" already exists');
+      expect(result).toMatch(/already taken/i);
+    });
+
+    it("returns null for an unrecognized error string", () => {
+      expect(classifyError("some unrelated error")).toBeNull();
+    });
   });
 });

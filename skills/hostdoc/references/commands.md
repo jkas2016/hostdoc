@@ -9,6 +9,7 @@ All commands run as `node <skill>/scripts/run.mjs <command> [args…]`.
   `--bucket <name>`, `--domain <domain>`, `--distribution <id>`.
 - Credentials use the AWS SDK default chain (env vars, shared profile via
   `--profile`, or SSO). The skill never stores or forwards credentials.
+- Advanced: set `HOSTDOC_BIN` to override how the CLI is launched (e.g. `hostdoc` or `npx -y hostdoc`). It is split on whitespace into argv, so paths in it must not contain spaces.
 
 ## Commands
 
