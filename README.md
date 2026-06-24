@@ -47,7 +47,7 @@ hostdoc provision \
   --subdomain shared \
   --region us-east-1
 # extracts bundled Terraform into ~/.local/state/hostdoc/infra, writes
-# terraform.tfvars from the flags, then runs terraform init + apply and saves
+# terraform.tfvars.json from the flags, then runs terraform init + apply and saves
 # the config (~15-30 min).
 # non-interactive (e.g. driving hostdoc from an agent): add --approve
 hostdoc publish ./mydoc      # → https://shared.example.com/<code>/
@@ -63,7 +63,7 @@ from, and `deprovision` always finds it. Override with `--dir`. Re-running
 Already provisioned the infra yourself? Import it without applying:
 `hostdoc init --from-terraform <dir>`.
 
-Tear it all down with `hostdoc deprovision` (it reuses the `terraform.tfvars`
+Tear it all down with `hostdoc deprovision` (it reuses the `terraform.tfvars.json`
 written during provision; or pass the same flags). Add `--approve` to run it
 non-interactively.
 
