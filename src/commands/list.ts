@@ -1,7 +1,7 @@
 import { makeS3, listKeys, getJson } from "../lib/aws.js";
 import { resolveConfig, type Overrides } from "../lib/config.js";
 import { buildPublicUrl } from "../lib/url.js";
-import type { Meta } from "../lib/meta.js";
+import { isValidMeta, type Meta } from "../lib/meta.js";
 
 export interface DocRow extends Meta {
   url: string;
@@ -14,11 +14,24 @@ export async function listDocs(
   const s3 = makeS3({ region: cfg.region, profile: flags.profile });
   const keys = await listKeys(s3, cfg.bucket, "_meta/");
 
-  const rows: DocRow[] = [];
-  for (const key of keys) {
-    const meta = await getJson<Meta>(s3, cfg.bucket, key);
-    rows.push({ ...meta, url: buildPublicUrl(cfg, meta.code) });
-  }
+  // Fetch sidecars in parallel; a corrupt/missing one is skipped, not fatal.
+  const settled = await Promise.all(
+    keys.map(async (key): Promise<DocRow | null> => {
+      try {
+        const meta = await getJson<unknown>(s3, cfg.bucket, key);
+        if (!isValidMeta(meta)) {
+          console.warn(`Skipping ${key}: not a valid document sidecar.`);
+          return null;
+        }
+        return { ...meta, url: buildPublicUrl(cfg, meta.code) };
+      } catch (err) {
+        console.warn(`Skipping ${key}: ${(err as Error).message}`);
+        return null;
+      }
+    }),
+  );
+
+  const rows = settled.filter((r): r is DocRow => r !== null);
   rows.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   return rows;
 }
