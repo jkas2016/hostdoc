@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { mkdtempSync, writeFileSync, readFileSync } from "node:fs";
+import { mkdtempSync, writeFileSync, readFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -34,9 +34,9 @@ describe("runProvision", () => {
   it("writes tfvars from flags, runs init then apply, writes a cloudfront config", () => {
     const cfg = runProvision({ dir, flags: FLAGS });
 
-    expect(readFileSync(join(dir, "terraform.tfvars"), "utf8")).toContain(
-      'hosted_zone_name = "example.com"',
-    );
+    expect(
+      JSON.parse(readFileSync(join(dir, "terraform.tfvars.json"), "utf8")).hosted_zone_name,
+    ).toBe("example.com");
 
     const argLists = mockExec.mock.calls.map((c) => c[1] as string[]);
     const initIdx = argLists.findIndex((a) => a.includes("init"));
@@ -51,12 +51,13 @@ describe("runProvision", () => {
     expect(loadConfig()).toEqual(cfg);
   });
 
-  it("lets flags overwrite an existing tfvars", () => {
+  it("lets flags overwrite an existing tfvars (and removes the legacy file)", () => {
     writeFileSync(join(dir, "terraform.tfvars"), 'subdomain = "old"\n');
     runProvision({ dir, flags: { ...FLAGS, subdomain: "fresh" } });
-    expect(readFileSync(join(dir, "terraform.tfvars"), "utf8")).toContain(
-      'subdomain        = "fresh"',
-    );
+    expect(
+      JSON.parse(readFileSync(join(dir, "terraform.tfvars.json"), "utf8")).subdomain,
+    ).toBe("fresh");
+    expect(existsSync(join(dir, "terraform.tfvars"))).toBe(false);
   });
 
   it("uses an existing tfvars when no flags are passed", () => {
