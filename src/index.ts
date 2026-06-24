@@ -183,7 +183,7 @@ withCommon(program.command("rm <id>"))
   });
 
 withCommon(program.command("open <id>"))
-  .description("Open a document's URL in your browser")
+  .description("Open a document's URL in your browser (does not verify the document exists)")
   .action((id, opts) => {
     try {
       console.log(runOpen({ id, ...overrides(opts) }));

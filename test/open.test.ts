@@ -26,6 +26,13 @@ describe("resolveOpenUrl", () => {
       "http://b.s3-website-us-east-1.amazonaws.com/abc/",
     );
   });
+
+  it.each(["a b", "../escape", "x?y", "x#y", "Doc1", "_meta"])(
+    "rejects invalid id %j",
+    (id) => {
+      expect(() => resolveOpenUrl({ id })).toThrow(/invalid id/i);
+    },
+  );
 });
 
 describe("describeConfig", () => {
