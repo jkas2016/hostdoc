@@ -30,7 +30,7 @@ describe("npm pack tarball", () => {
   it("never ships state or real tfvars", () => {
     const files = packedFiles();
     expect(files.some((p) => p.includes(".tfstate"))).toBe(false);
-    expect(files.some((p) => /(^|\/)terraform\.tfvars$/.test(p))).toBe(false);
+    expect(files.some((p) => /(^|\/)terraform\.tfvars(\.json)?$/.test(p))).toBe(false);
   });
 
   it("ships exactly the TEMPLATE_FILES allowlist (no drift, no extras)", () => {

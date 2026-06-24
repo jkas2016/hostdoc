@@ -1,4 +1,4 @@
-import { existsSync, writeFileSync } from "node:fs";
+import { existsSync, writeFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
 export interface TfvarsFlags {
@@ -8,36 +8,38 @@ export interface TfvarsFlags {
   priceClass?: string;
 }
 
-const TFVARS = "terraform.tfvars";
+const TFVARS = "terraform.tfvars.json";
+const LEGACY_TFVARS = "terraform.tfvars";
 
 export function tfvarsPath(dir: string): string {
   return join(dir, TFVARS);
 }
 
+/** True if a tool-written terraform.tfvars.json or a legacy terraform.tfvars exists. */
 export function hasTfvars(dir: string): boolean {
-  return existsSync(tfvarsPath(dir));
-}
-
-/** HCL string literal: escape backslash and double-quote. */
-function hcl(value: string): string {
-  return `"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+  return existsSync(tfvarsPath(dir)) || existsSync(join(dir, LEGACY_TFVARS));
 }
 
 /**
- * Write terraform.tfvars in <dir>. price_class is only emitted when provided
- * (Terraform supplies its own default otherwise).
+ * Write terraform.tfvars.json in <dir>. Values are JSON-encoded, so user input is
+ * always literal — JSON has no HCL template interpolation, closing the
+ * ${...}/%{...} injection vector. price_class is only emitted when provided
+ * (Terraform supplies its own default otherwise). A legacy plain terraform.tfvars
+ * is removed so flags win cleanly (Terraform would otherwise still load it, with
+ * terraform.tfvars.json taking precedence per-key but leaving stale keys behind).
  */
 export function writeTfvars(
   dir: string,
   vars: { hostedZone: string; subdomain: string; region: string; priceClass?: string },
 ): void {
-  const lines = [
-    `hosted_zone_name = ${hcl(vars.hostedZone)}`,
-    `subdomain        = ${hcl(vars.subdomain)}`,
-    `aws_region       = ${hcl(vars.region)}`,
-  ];
-  if (vars.priceClass) lines.push(`price_class      = ${hcl(vars.priceClass)}`);
-  writeFileSync(tfvarsPath(dir), lines.join("\n") + "\n");
+  const obj: Record<string, string> = {
+    hosted_zone_name: vars.hostedZone,
+    subdomain: vars.subdomain,
+    aws_region: vars.region,
+  };
+  if (vars.priceClass) obj.price_class = vars.priceClass;
+  writeFileSync(tfvarsPath(dir), JSON.stringify(obj, null, 2) + "\n");
+  rmSync(join(dir, LEGACY_TFVARS), { force: true });
 }
 
 /**

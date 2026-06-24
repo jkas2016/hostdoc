@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { mkdtempSync, writeFileSync, readFileSync } from "node:fs";
+import { mkdtempSync, writeFileSync, readFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -22,9 +22,9 @@ describe("runDeprovision", () => {
   it("writes tfvars from flags, runs init then destroy (interactive by default)", () => {
     runDeprovision({ dir, flags: FLAGS });
 
-    expect(readFileSync(join(dir, "terraform.tfvars"), "utf8")).toContain(
-      'aws_region       = "ap-northeast-2"',
-    );
+    expect(
+      JSON.parse(readFileSync(join(dir, "terraform.tfvars.json"), "utf8")).aws_region,
+    ).toBe("ap-northeast-2");
     const argLists = mockExec.mock.calls.map((c) => c[1] as string[]);
     const initIdx = argLists.findIndex((a) => a.includes("init"));
     const destroyIdx = argLists.findIndex((a) => a.includes("destroy"));

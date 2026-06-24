@@ -8,6 +8,7 @@ dist/
 *.tfstate
 *.tfstate.*
 terraform.tfvars
+terraform.tfvars.json
 crash.log
 
 # Secrets / env
