@@ -59,4 +59,11 @@ describe("aws helpers", () => {
     const v = await getJson(makeS3({ region: "us-east-1" }), "b", "k.json");
     expect(v).toEqual({ ok: 1 });
   });
+
+  it("getJson throws a clear error when the response body is missing", async () => {
+    s3mock.on(GetObjectCommand).resolves({ Body: undefined });
+    await expect(
+      getJson(makeS3({ region: "us-east-1" }), "b", "k.json"),
+    ).rejects.toThrow(/empty response body.*k\.json/i);
+  });
 });

@@ -14,6 +14,13 @@ export function metaKey(code: string): string {
   return `_meta/${code}.json`;
 }
 
+/** Runtime guard: sidecar JSON has the fields list relies on (code + createdAt). */
+export function isValidMeta(v: unknown): v is Meta {
+  if (typeof v !== "object" || v === null) return false;
+  const m = v as Record<string, unknown>;
+  return typeof m.code === "string" && typeof m.createdAt === "string";
+}
+
 export function extractTitle(html: string): string | null {
   const m = html.match(/<title>([\s\S]*?)<\/title>/i);
   return m ? m[1].trim() : null;

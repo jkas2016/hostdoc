@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { mockClient } from "aws-sdk-client-mock";
 import {
   S3Client,
@@ -33,5 +33,42 @@ describe("listDocs", () => {
     const rows = await listDocs({});
     expect(rows.map((r) => r.code)).toEqual(["b", "a"]); // newest first
     expect(rows[0].url).toBe("http://b.s3-website-us-east-1.amazonaws.com/b/");
+  });
+
+  it("skips a corrupt sidecar and still returns the valid ones", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    s3mock
+      .on(ListObjectsV2Command)
+      .resolves({ Contents: [{ Key: "_meta/a.json" }, { Key: "_meta/bad.json" }], IsTruncated: false });
+    s3mock
+      .on(GetObjectCommand, { Key: "_meta/a.json" })
+      .resolves({ Body: { transformToString: async () => JSON.stringify({ code: "a", slug: null, title: "A", createdAt: "2026-01-01T00:00:00Z", files: 1, bytes: 1, sourcePath: "/a" }) } as any });
+    s3mock
+      .on(GetObjectCommand, { Key: "_meta/bad.json" })
+      .resolves({ Body: { transformToString: async () => "{ not valid json" } as any });
+
+    const rows = await listDocs({});
+
+    expect(rows.map((r) => r.code)).toEqual(["a"]);
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it("skips a sidecar missing createdAt without crashing the sort", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    s3mock
+      .on(ListObjectsV2Command)
+      .resolves({ Contents: [{ Key: "_meta/a.json" }, { Key: "_meta/nocreate.json" }], IsTruncated: false });
+    s3mock
+      .on(GetObjectCommand, { Key: "_meta/a.json" })
+      .resolves({ Body: { transformToString: async () => JSON.stringify({ code: "a", slug: null, title: "A", createdAt: "2026-01-01T00:00:00Z", files: 1, bytes: 1, sourcePath: "/a" }) } as any });
+    s3mock
+      .on(GetObjectCommand, { Key: "_meta/nocreate.json" })
+      .resolves({ Body: { transformToString: async () => JSON.stringify({ code: "b", slug: null, title: "B", files: 1, bytes: 1, sourcePath: "/b" }) } as any });
+
+    const rows = await listDocs({});
+
+    expect(rows.map((r) => r.code)).toEqual(["a"]);
+    warn.mockRestore();
   });
 });

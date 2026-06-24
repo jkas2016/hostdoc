@@ -90,6 +90,9 @@ export async function getJson<T = unknown>(
   const res = await s3.send(
     new GetObjectCommand({ Bucket: bucket, Key: key }),
   );
+  if (!res.Body) {
+    throw new Error(`Empty response body for ${key}`);
+  }
   const text = await (res.Body as { transformToString(): Promise<string> }).transformToString();
   return JSON.parse(text) as T;
 }
