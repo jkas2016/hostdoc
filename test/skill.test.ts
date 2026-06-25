@@ -1,10 +1,17 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { spawnSync } from "node:child_process";
-import { chmodSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { spawn, spawnSync } from "node:child_process";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { resolveRunner, onPath, classifyError } from "../skills/hostdoc/scripts/run.mjs";
+import {
+  resolveRunner,
+  onPath,
+  classifyError,
+  splitCommand,
+  clampTail,
+} from "../skills/hostdoc/scripts/run.mjs";
+import { credsPresent, classifyConfigProbe } from "../skills/hostdoc/scripts/preflight.mjs";
 
 const repo = join(dirname(fileURLToPath(import.meta.url)), "..");
 const runMjs = join(repo, "skills", "hostdoc", "scripts", "run.mjs");
@@ -148,5 +155,139 @@ describe("run.mjs unit (pure)", () => {
     it("returns null for an unrecognized error string", () => {
       expect(classifyError("some unrelated error")).toBeNull();
     });
+  });
+});
+
+describe("classifyConfigProbe (#18)", () => {
+  it("present when status 0 and stdout has mode:", () => {
+    expect(classifyConfigProbe({ status: 0, stdout: "mode: s3-website\n" })).toBe("present");
+  });
+  it("absent when status non-zero", () => {
+    expect(classifyConfigProbe({ status: 1, stdout: "" })).toBe("absent");
+  });
+  it("unknown when killed by signal (null status)", () => {
+    expect(classifyConfigProbe({ status: null, signal: "SIGTERM" })).toBe("unknown");
+  });
+  it("unknown when spawn errored (timeout)", () => {
+    expect(classifyConfigProbe({ error: new Error("timeout"), status: null })).toBe("unknown");
+  });
+});
+
+describe("credsPresent (#18)", () => {
+  it("true for any AWS_* env signal", () => {
+    expect(credsPresent({ AWS_ACCESS_KEY_ID: "x" }, "/no/home")).toBe(true);
+    expect(credsPresent({ AWS_PROFILE: "p" }, "/no/home")).toBe(true);
+    expect(credsPresent({ AWS_SESSION_TOKEN: "t" }, "/no/home")).toBe(true);
+  });
+  it("true when ~/.aws/credentials exists", () => {
+    const home = mkdtempSync(join(tmpdir(), "hostdoc-aws-"));
+    mkdirSync(join(home, ".aws"));
+    writeFileSync(join(home, ".aws", "credentials"), "[default]\n");
+    expect(credsPresent({}, home)).toBe(true);
+    rmSync(home, { recursive: true, force: true });
+  });
+  it("false with no env and an empty home", () => {
+    const home = mkdtempSync(join(tmpdir(), "hostdoc-aws-"));
+    expect(credsPresent({}, home)).toBe(false);
+    rmSync(home, { recursive: true, force: true });
+  });
+});
+
+describe("run.mjs signal handling (#18, POSIX)", () => {
+  let sigTmp: string;
+  beforeEach(() => {
+    sigTmp = mkdtempSync(join(tmpdir(), "hostdoc-sig-"));
+  });
+  afterEach(() => {
+    rmSync(sigTmp, { recursive: true, force: true });
+  });
+
+  function startWrapper(sleeperBody: string) {
+    const sleeper = join(sigTmp, "sleeper.cjs");
+    writeFileSync(sleeper, sleeperBody);
+    const env = { PATH: process.env.PATH, HOSTDOC_BIN: `node ${sleeper}` };
+    const proc = spawn("node", [runMjs, "publish", "x"], {
+      env,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    const ready = new Promise<void>((resolve) => {
+      proc.stdout.on("data", (d) => {
+        if (d.toString().includes("ready")) resolve();
+      });
+    });
+    return { proc, ready };
+  }
+
+  it.skipIf(process.platform === "win32")("forwards SIGTERM to the child", async () => {
+    const marker = join(sigTmp, "got-signal");
+    const { proc, ready } = startWrapper(
+      `process.on('SIGTERM',()=>{require('fs').writeFileSync(${JSON.stringify(marker)},'got');process.exit(0);});` +
+        `setInterval(()=>{},1000);process.stdout.write('ready\\n');`,
+    );
+    await ready;
+    proc.kill("SIGTERM");
+    await new Promise((r) => proc.on("close", r));
+    expect(existsSync(marker)).toBe(true);
+  });
+
+  it.skipIf(process.platform === "win32")(
+    "exits 128+SIGTERM (143) when the child is signal-killed",
+    async () => {
+      const { proc, ready } = startWrapper(
+        `setInterval(()=>{},1000);process.stdout.write('ready\\n');`,
+      );
+      await ready;
+      proc.kill("SIGTERM");
+      const code: number = await new Promise((r) => proc.on("close", (c) => r(c)));
+      expect(code).toBe(143);
+    },
+  );
+});
+
+describe("run.mjs pure helpers (#18)", () => {
+  let onPathTmp: string;
+  beforeEach(() => {
+    onPathTmp = mkdtempSync(join(tmpdir(), "hostdoc-onpath-"));
+  });
+  afterEach(() => {
+    rmSync(onPathTmp, { recursive: true, force: true });
+  });
+
+  describe("splitCommand", () => {
+    it("splits on whitespace", () => {
+      expect(splitCommand("node /x/cli.js")).toEqual(["node", "/x/cli.js"]);
+    });
+    it("keeps a double-quoted path with spaces as one token", () => {
+      expect(splitCommand('node "/x/my cli.js"')).toEqual(["node", "/x/my cli.js"]);
+    });
+    it("collapses repeated whitespace and ignores empty input", () => {
+      expect(splitCommand("a  b")).toEqual(["a", "b"]);
+      expect(splitCommand("")).toEqual([]);
+    });
+  });
+
+  describe("clampTail", () => {
+    it("appends when under the cap", () => {
+      expect(clampTail("", "abc", 10)).toBe("abc");
+    });
+    it("keeps only the last cap chars when over", () => {
+      expect(clampTail("abcdefghij", "KLM", 10)).toBe("defghijKLM");
+    });
+  });
+
+  describe("onPath executability", () => {
+    it("returns false for a directory named like the tool", () => {
+      mkdirSync(join(onPathTmp, "hostdoc"));
+      expect(onPath("hostdoc", { PATH: onPathTmp })).toBe(false);
+    });
+    it.skipIf(process.platform === "win32" || process.getuid?.() === 0)(
+      "returns false for a non-executable file",
+      () => {
+        const bin = join(onPathTmp, "tool");
+        writeFileSync(bin, "#!/bin/sh\n");
+        chmodSync(bin, 0o644);
+        expect(onPath("tool", { PATH: onPathTmp })).toBe(false);
+      },
+    );
   });
 });
