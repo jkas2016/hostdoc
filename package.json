@@ -6,6 +6,7 @@
     "type": "git",
     "url": "git+https://github.com/jkas2016/hostdoc.git"
   },
+  "homepage": "https://jkas2016.github.io/hostdoc/",
   "type": "module",
   "bin": {
     "hostdoc": "dist/index.js"

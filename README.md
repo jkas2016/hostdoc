@@ -2,6 +2,8 @@
 
 Publish a local HTML file or folder to **your own AWS** and get a short shareable link.
 
+📖 **[Full guide & documentation](https://jkas2016.github.io/hostdoc/)**
+
 > Phase 1 ships the **no-domain (S3 website)** mode: an HTTP link served straight from an S3 static-website bucket. Custom-domain HTTPS via CloudFront is Phase 2.
 
 ## Install
