@@ -11,6 +11,7 @@ import {
   splitCommand,
   clampTail,
 } from "../skills/hostdoc/scripts/run.mjs";
+import { credsPresent, classifyConfigProbe } from "../skills/hostdoc/scripts/preflight.mjs";
 
 const repo = join(dirname(fileURLToPath(import.meta.url)), "..");
 const runMjs = join(repo, "skills", "hostdoc", "scripts", "run.mjs");
@@ -154,6 +155,41 @@ describe("run.mjs unit (pure)", () => {
     it("returns null for an unrecognized error string", () => {
       expect(classifyError("some unrelated error")).toBeNull();
     });
+  });
+});
+
+describe("classifyConfigProbe (#18)", () => {
+  it("present when status 0 and stdout has mode:", () => {
+    expect(classifyConfigProbe({ status: 0, stdout: "mode: s3-website\n" })).toBe("present");
+  });
+  it("absent when status non-zero", () => {
+    expect(classifyConfigProbe({ status: 1, stdout: "" })).toBe("absent");
+  });
+  it("unknown when killed by signal (null status)", () => {
+    expect(classifyConfigProbe({ status: null, signal: "SIGTERM" })).toBe("unknown");
+  });
+  it("unknown when spawn errored (timeout)", () => {
+    expect(classifyConfigProbe({ error: new Error("timeout"), status: null })).toBe("unknown");
+  });
+});
+
+describe("credsPresent (#18)", () => {
+  it("true for any AWS_* env signal", () => {
+    expect(credsPresent({ AWS_ACCESS_KEY_ID: "x" }, "/no/home")).toBe(true);
+    expect(credsPresent({ AWS_PROFILE: "p" }, "/no/home")).toBe(true);
+    expect(credsPresent({ AWS_SESSION_TOKEN: "t" }, "/no/home")).toBe(true);
+  });
+  it("true when ~/.aws/credentials exists", () => {
+    const home = mkdtempSync(join(tmpdir(), "hostdoc-aws-"));
+    mkdirSync(join(home, ".aws"));
+    writeFileSync(join(home, ".aws", "credentials"), "[default]\n");
+    expect(credsPresent({}, home)).toBe(true);
+    rmSync(home, { recursive: true, force: true });
+  });
+  it("false with no env and an empty home", () => {
+    const home = mkdtempSync(join(tmpdir(), "hostdoc-aws-"));
+    expect(credsPresent({}, home)).toBe(false);
+    rmSync(home, { recursive: true, force: true });
   });
 });
 
