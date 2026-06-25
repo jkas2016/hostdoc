@@ -1,10 +1,16 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { spawnSync } from "node:child_process";
-import { chmodSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { resolveRunner, onPath, classifyError } from "../skills/hostdoc/scripts/run.mjs";
+import {
+  resolveRunner,
+  onPath,
+  classifyError,
+  splitCommand,
+  clampTail,
+} from "../skills/hostdoc/scripts/run.mjs";
 
 const repo = join(dirname(fileURLToPath(import.meta.url)), "..");
 const runMjs = join(repo, "skills", "hostdoc", "scripts", "run.mjs");
@@ -148,5 +154,53 @@ describe("run.mjs unit (pure)", () => {
     it("returns null for an unrecognized error string", () => {
       expect(classifyError("some unrelated error")).toBeNull();
     });
+  });
+});
+
+describe("run.mjs pure helpers (#18)", () => {
+  let onPathTmp: string;
+  beforeEach(() => {
+    onPathTmp = mkdtempSync(join(tmpdir(), "hostdoc-onpath-"));
+  });
+  afterEach(() => {
+    rmSync(onPathTmp, { recursive: true, force: true });
+  });
+
+  describe("splitCommand", () => {
+    it("splits on whitespace", () => {
+      expect(splitCommand("node /x/cli.js")).toEqual(["node", "/x/cli.js"]);
+    });
+    it("keeps a double-quoted path with spaces as one token", () => {
+      expect(splitCommand('node "/x/my cli.js"')).toEqual(["node", "/x/my cli.js"]);
+    });
+    it("collapses repeated whitespace and ignores empty input", () => {
+      expect(splitCommand("a  b")).toEqual(["a", "b"]);
+      expect(splitCommand("")).toEqual([]);
+    });
+  });
+
+  describe("clampTail", () => {
+    it("appends when under the cap", () => {
+      expect(clampTail("", "abc", 10)).toBe("abc");
+    });
+    it("keeps only the last cap chars when over", () => {
+      expect(clampTail("abcdefghij", "KLM", 10)).toBe("defghijKLM");
+    });
+  });
+
+  describe("onPath executability", () => {
+    it("returns false for a directory named like the tool", () => {
+      mkdirSync(join(onPathTmp, "hostdoc"));
+      expect(onPath("hostdoc", { PATH: onPathTmp })).toBe(false);
+    });
+    it.skipIf(process.platform === "win32" || process.getuid?.() === 0)(
+      "returns false for a non-executable file",
+      () => {
+        const bin = join(onPathTmp, "tool");
+        writeFileSync(bin, "#!/bin/sh\n");
+        chmodSync(bin, 0o644);
+        expect(onPath("tool", { PATH: onPathTmp })).toBe(false);
+      },
+    );
   });
 });
