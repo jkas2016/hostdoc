@@ -1,7 +1,14 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, rmSync, existsSync, readFileSync } from "node:fs";
+import {
+  mkdtempSync,
+  mkdirSync,
+  writeFileSync,
+  rmSync,
+  existsSync,
+  readFileSync,
+} from "node:fs";
 import { tmpdir, homedir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import {
   configPath,
   infraDir,
@@ -72,6 +79,18 @@ describe("save/load", () => {
   it("loadConfig returns null when absent", () => {
     expect(loadConfig()).toBeNull();
   });
+  it("loadConfig throws a path-tagged error on corrupt JSON", () => {
+    const p = configPath();
+    mkdirSync(dirname(p), { recursive: true });
+    writeFileSync(p, "{ not valid json");
+    expect(() => loadConfig()).toThrow(new RegExp(p.replace(/[.\\]/g, "\\$&")));
+  });
+  it("loadConfig rejects a non-object JSON value (no silent undefined fields)", () => {
+    const p = configPath();
+    mkdirSync(dirname(p), { recursive: true });
+    writeFileSync(p, "42");
+    expect(() => loadConfig()).toThrow(/object/);
+  });
 });
 
 describe("resolveConfig", () => {
@@ -106,5 +125,15 @@ describe("resolveConfig", () => {
   });
   it("throws a helpful error when nothing is configured", () => {
     expect(() => resolveConfig({})).toThrow(/hostdoc setup/);
+  });
+  it("rejects partial cloudfront config: domain without distribution (no silent s3-website downgrade)", () => {
+    expect(() =>
+      resolveConfig({ bucket: "b", region: "us-east-1", domain: "x.example.com" }),
+    ).toThrow(/'domain' set without 'distributionId'/);
+  });
+  it("rejects partial cloudfront config: distribution without domain", () => {
+    expect(() =>
+      resolveConfig({ bucket: "b", region: "us-east-1", distribution: "E1" }),
+    ).toThrow(/'distributionId' set without 'domain'/);
   });
 });
