@@ -18,3 +18,9 @@ export function runOpen(args: { id: string } & Overrides): string {
   openInBrowser(url);
   return url;
 }
+
+/** Open a just-published URL: derive its code and re-open under `overrides`. */
+export function openPublishedUrl(url: string, overrides: Overrides = {}): string {
+  const id = url.split("/").slice(-2, -1)[0];
+  return runOpen({ id, ...overrides });
+}

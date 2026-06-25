@@ -8,7 +8,7 @@ import { infraDir } from "./lib/config.js";
 import { runPublish } from "./commands/publish.js";
 import { listDocs, formatRows } from "./commands/list.js";
 import { runRm } from "./commands/rm.js";
-import { runOpen } from "./commands/open.js";
+import { runOpen, openPublishedUrl } from "./commands/open.js";
 import { describeConfig } from "./commands/config.js";
 
 const program = new Command();
@@ -153,7 +153,7 @@ withCommon(program.command("publish <path>"))
         ...overrides(opts),
       });
       console.log(url);
-      if (opts.open && !opts.dryRun) runOpen({ id: url.split("/").slice(-2, -1)[0] });
+      if (opts.open && !opts.dryRun) openPublishedUrl(url, overrides(opts));
     } catch (err) {
       fail(err);
     }

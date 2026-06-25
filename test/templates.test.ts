@@ -2,7 +2,12 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { extractTemplates, hasTfFiles, TEMPLATE_FILES } from "../src/lib/templates.js";
+import {
+  extractTemplates,
+  hasTfFiles,
+  firstExistingDir,
+  TEMPLATE_FILES,
+} from "../src/lib/templates.js";
 
 let src: string;
 let dest: string;
@@ -32,6 +37,28 @@ describe("extractTemplates", () => {
     expect(res.extracted).toBe(false);
     expect(readFileSync(join(target, "main.tf"), "utf8")).toBe("# user edits\n");
     expect(existsSync(join(target, "variables.tf"))).toBe(false);
+  });
+});
+
+describe("firstExistingDir", () => {
+  it("returns the first existing dir", () => {
+    expect(
+      firstExistingDir(["/no/a", "/yes/b", "/yes/c"], (d) => d.startsWith("/yes")),
+    ).toBe("/yes/b");
+  });
+  it("falls back to the last entry when none exist", () => {
+    expect(firstExistingDir(["/no/a", "/no/b"], () => false)).toBe("/no/b");
+  });
+});
+
+describe("bundledTemplatesDir fallback (from source)", () => {
+  it("extractTemplates with the default src copies every template file", () => {
+    const target = join(dest, "infra-default");
+    const res = extractTemplates(target); // default srcDir = bundledTemplatesDir()
+    expect(res.extracted).toBe(true);
+    for (const f of TEMPLATE_FILES) {
+      expect(existsSync(join(target, f))).toBe(true);
+    }
   });
 });
 
