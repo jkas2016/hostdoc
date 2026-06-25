@@ -50,7 +50,16 @@ export function saveConfig(cfg: Config): void {
 export function loadConfig(): Config | null {
   const p = configPath();
   if (!existsSync(p)) return null;
-  return JSON.parse(readFileSync(p, "utf8")) as Config;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(readFileSync(p, "utf8"));
+  } catch (e) {
+    throw new Error(`Invalid config at ${p}: not valid JSON (${(e as Error).message}).`);
+  }
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    throw new Error(`Invalid config at ${p}: expected a JSON object.`);
+  }
+  return parsed as Config;
 }
 
 /** Merge file < env < flags, then derive mode and required fields. */
@@ -63,6 +72,17 @@ export function resolveConfig(flags: Overrides): Config {
     flags.distribution ??
     process.env.HOSTDOC_DISTRIBUTION ??
     file?.distributionId;
+
+  // Exactly one of domain/distributionId set = partial cloudfront intent.
+  // Without this guard it would fall through to the s3-website branch below,
+  // silently dropping the domain/distribution the user asked for.
+  if (Boolean(domain) !== Boolean(distributionId)) {
+    throw new Error(
+      domain
+        ? "Incomplete cloudfront config: 'domain' set without 'distributionId'. Set --distribution / HOSTDOC_DISTRIBUTION (or run `hostdoc init --from-terraform <dir>`), or unset the domain for s3-website mode."
+        : "Incomplete cloudfront config: 'distributionId' set without 'domain'. Set --domain / HOSTDOC_DOMAIN, or unset the distribution for s3-website mode.",
+    );
+  }
 
   if (domain && distributionId) {
     if (!bucket || !region) {
