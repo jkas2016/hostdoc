@@ -1,3 +1,15 @@
+## [1.1.1](https://github.com/jkas2016/hostdoc/compare/v1.1.0...v1.1.1) (2026-06-25)
+
+
+### Bug Fixes
+
+* harden CLI failure paths (publish --open override, browser spawn, dev-mode templates) ([#17](https://github.com/jkas2016/hostdoc/issues/17)) ([#28](https://github.com/jkas2016/hostdoc/issues/28)) ([1cb8dda](https://github.com/jkas2016/hostdoc/commit/1cb8ddaf0787c148c56c664c47525a256dec5202))
+* harden config parsing and reject partial cloudfront config ([#15](https://github.com/jkas2016/hostdoc/issues/15)) ([#27](https://github.com/jkas2016/hostdoc/issues/27)) ([eab32db](https://github.com/jkas2016/hostdoc/commit/eab32db73869d270772380cbe829366d68e52988))
+* harden the agent skill wrapper (signals, exit code, preflight) ([#18](https://github.com/jkas2016/hostdoc/issues/18)) ([#29](https://github.com/jkas2016/hostdoc/issues/29)) ([bffef1b](https://github.com/jkas2016/hostdoc/commit/bffef1bbac12415f6ff49672143ebabb5405e9a6))
+* make list resilient to corrupt or incomplete sidecars ([#23](https://github.com/jkas2016/hostdoc/issues/23)) ([79186cd](https://github.com/jkas2016/hostdoc/commit/79186cda44f6d33dbb00adb1284ef0a64d025f17)), closes [#14](https://github.com/jkas2016/hostdoc/issues/14)
+* validate rm/open id and gate rm behind a confirmation prompt ([#22](https://github.com/jkas2016/hostdoc/issues/22)) ([21c240a](https://github.com/jkas2016/hostdoc/commit/21c240ad594e96aea9835901d3e369a936acbafb)), closes [#13](https://github.com/jkas2016/hostdoc/issues/13)
+* write terraform.tfvars.json to prevent HCL template injection ([#24](https://github.com/jkas2016/hostdoc/issues/24)) ([031d3d7](https://github.com/jkas2016/hostdoc/commit/031d3d7b68802e452d2c6d32ff1d014fab9df105)), closes [#16](https://github.com/jkas2016/hostdoc/issues/16)
+
 # [1.1.0](https://github.com/jkas2016/hostdoc/compare/v1.0.1...v1.1.0) (2026-06-23)
 
 
