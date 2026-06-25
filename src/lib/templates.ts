@@ -12,10 +12,23 @@ export const TEMPLATE_FILES = [
   ".terraform.lock.hcl",
 ] as const;
 
-/** Path to the bundled templates shipped under dist/templates/infra/. */
+/** First dir in `dirs` that exists; falls back to the last entry when none do. */
+export function firstExistingDir(
+  dirs: string[],
+  exists: (d: string) => boolean = existsSync,
+): string {
+  return dirs.find((d) => exists(d)) ?? dirs[dirs.length - 1];
+}
+
+/**
+ * Path to the bundled templates. Prefers dist/templates/infra/ (shipped in the
+ * npm package); from source (npm run dev) that dir is absent, so fall back to the
+ * repo's infra/.
+ */
 export function bundledTemplatesDir(): string {
-  // dist/lib/templates.js -> dist/templates/infra
-  return fileURLToPath(new URL("../templates/infra/", import.meta.url));
+  const bundled = fileURLToPath(new URL("../templates/infra/", import.meta.url));
+  const repoInfra = fileURLToPath(new URL("../../infra/", import.meta.url));
+  return firstExistingDir([bundled, repoInfra]);
 }
 
 /** Whether <dir> already contains any Terraform (*.tf) files. */
