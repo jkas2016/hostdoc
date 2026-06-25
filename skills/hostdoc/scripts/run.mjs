@@ -69,20 +69,24 @@ export function classifyError(stderr) {
 function main(argv) {
   const [cmd, ...prefix] = resolveRunner();
   const child = spawn(cmd, [...prefix, ...argv], { stdio: ["inherit", "inherit", "pipe"] });
-  const errChunks = [];
+  let errTail = "";
   child.stderr.on("data", (d) => {
-    errChunks.push(d);
+    errTail = clampTail(errTail, d.toString());
     process.stderr.write(d);
   });
+  for (const sig of ["SIGINT", "SIGTERM", "SIGHUP"]) {
+    process.on(sig, () => child.kill(sig));
+  }
   child.on("error", (e) => {
     process.stderr.write(`hostdoc-skill: could not launch the hostdoc CLI: ${e.message}\n`);
     process.exit(127);
   });
-  child.on("close", (code) => {
+  child.on("close", (code, signal) => {
     if (code !== 0) {
-      const hint = classifyError(Buffer.concat(errChunks).toString());
+      const hint = classifyError(errTail);
       if (hint) process.stderr.write(`\nhostdoc-skill: ${hint}\n`);
     }
+    if (signal) process.exit(128 + (osConstants.signals[signal] ?? 0));
     process.exit(code ?? 1);
   });
 }

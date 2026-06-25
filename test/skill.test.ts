@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
@@ -155,6 +155,57 @@ describe("run.mjs unit (pure)", () => {
       expect(classifyError("some unrelated error")).toBeNull();
     });
   });
+});
+
+describe("run.mjs signal handling (#18, POSIX)", () => {
+  let sigTmp: string;
+  beforeEach(() => {
+    sigTmp = mkdtempSync(join(tmpdir(), "hostdoc-sig-"));
+  });
+  afterEach(() => {
+    rmSync(sigTmp, { recursive: true, force: true });
+  });
+
+  function startWrapper(sleeperBody: string) {
+    const sleeper = join(sigTmp, "sleeper.cjs");
+    writeFileSync(sleeper, sleeperBody);
+    const env = { PATH: process.env.PATH, HOSTDOC_BIN: `node ${sleeper}` };
+    const proc = spawn("node", [runMjs, "publish", "x"], {
+      env,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    const ready = new Promise<void>((resolve) => {
+      proc.stdout.on("data", (d) => {
+        if (d.toString().includes("ready")) resolve();
+      });
+    });
+    return { proc, ready };
+  }
+
+  it.skipIf(process.platform === "win32")("forwards SIGTERM to the child", async () => {
+    const marker = join(sigTmp, "got-signal");
+    const { proc, ready } = startWrapper(
+      `process.on('SIGTERM',()=>{require('fs').writeFileSync(${JSON.stringify(marker)},'got');process.exit(0);});` +
+        `setInterval(()=>{},1000);process.stdout.write('ready\\n');`,
+    );
+    await ready;
+    proc.kill("SIGTERM");
+    await new Promise((r) => proc.on("close", r));
+    expect(existsSync(marker)).toBe(true);
+  });
+
+  it.skipIf(process.platform === "win32")(
+    "exits 128+SIGTERM (143) when the child is signal-killed",
+    async () => {
+      const { proc, ready } = startWrapper(
+        `setInterval(()=>{},1000);process.stdout.write('ready\\n');`,
+      );
+      await ready;
+      proc.kill("SIGTERM");
+      const code: number = await new Promise((r) => proc.on("close", (c) => r(c)));
+      expect(code).toBe(143);
+    },
+  );
 });
 
 describe("run.mjs pure helpers (#18)", () => {
