@@ -40,20 +40,25 @@ resolves templates from the repo `infra/` when no bundled copy exists.
 
 ## Approach (decided)
 
-Targeted fixes plus small, idiomatic test seams. The repo already uses an
-`import.meta`-main guard in `skills/hostdoc/scripts/*.mjs`; we apply the same
-pattern to `src/index.ts` so the Commander wiring becomes testable in-process.
+Targeted fixes plus small, idiomatic test seams. For finding 1 the buggy logic
+(derive the code from the published URL, forward overrides to `runOpen`) is
+extracted into a tested helper in `src/commands/open.ts`; `index.ts` then calls
+it. This is preferred over an `import.meta`-main guard on `index.ts` because the
+npm `bin` is installed as a symlink (the guard's `argv[1]` comparison is fragile
+there) and because importing `index.ts` from a test would run its top-level
+`program.parseAsync()`. The helper carries the regression guard with neither
+risk.
 
 ## Changes
 
-### 1. `src/index.ts` (finding 1 + test seam)
+### 1. `src/commands/open.ts` + `src/index.ts` (finding 1 + test seam)
 
-- Publish action: `runOpen({ id: <code>, ...overrides(opts) })` (mirror other call
-  sites).
-- Wrap the bottom `program.parseAsync()` in an `import.meta`-main guard and
-  `export` the `program` so a test can drive `program.parseAsync(argv, { from: "user" })`
-  in-process. This matches the existing guard convention in the skill scripts and
-  is the only way to regression-test the Commander call site without real AWS.
+- Add `export function openPublishedUrl(url: string, overrides?: Overrides): string`
+  to `open.ts`: derive the code via `url.split("/").slice(-2, -1)[0]` and return
+  `runOpen({ id, ...overrides })`.
+- `index.ts` publish action: replace `runOpen({ id: url.split(...) })` with
+  `openPublishedUrl(url, overrides(opts))`. `index.ts` stays auto-running (no
+  main-guard); tests import only `open.ts`.
 
 ### 2. `src/lib/browser.ts` (finding 2)
 
@@ -77,13 +82,14 @@ pattern to `src/index.ts` so the Commander wiring becomes testable in-process.
 
 ## Test plan (TDD: tests first)
 
-### `test/index.test.ts` (new) — finding 1
+### `test/publish-open.test.ts` (new) — finding 1
 
-- Set `HOSTDOC_BUCKET`/`HOSTDOC_REGION` to an "env" config, mock S3
-  (`aws-sdk-client-mock`) and `openInBrowser` (vi.mock). Drive
-  `program.parseAsync(["publish", <dir>, "--open", "--bucket", "flagbkt", "--region", "us-east-1"], { from: "user" })`
-  and assert `openInBrowser` was called with the **flagbkt** URL, not the env one.
-  → issue acceptance criterion 1.
+- `vi.mock("../src/lib/browser.js")` (stub `openInBrowser`) to avoid real spawns.
+  With ambient `HOSTDOC_BUCKET=envbkt`, assert
+  `openPublishedUrl("http://envbkt.../abc/", { bucket: "flagbkt", region: "us-east-1" })`
+  returns `http://flagbkt.s3-website-us-east-1.amazonaws.com/abc/` (overrides win),
+  and that the no-override call falls back to `envbkt`. Also assert the stubbed
+  `openInBrowser` was called with the override URL. → issue acceptance criterion 1.
 
 ### `test/open.test.ts` — finding 2
 
