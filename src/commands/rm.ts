@@ -2,13 +2,13 @@ import { makeS3, listKeys, deleteKeys } from "../lib/aws.js";
 import { resolveConfig, type Overrides } from "../lib/config.js";
 import { metaKey } from "../lib/meta.js";
 import { makeCloudFront, invalidate } from "../lib/cloudfront.js";
-import { isValidSlug } from "../lib/code.js";
+import { isValidSlug, isValidCode } from "../lib/code.js";
 import { confirm } from "../lib/prompt.js";
 
 export async function runRm(
   args: { id: string; yes?: boolean } & Overrides & { profile?: string },
 ): Promise<void> {
-  if (!isValidSlug(args.id)) {
+  if (!isValidSlug(args.id) && !isValidCode(args.id)) {
     throw new Error(`Invalid id: ${args.id}`);
   }
   if (!args.yes && !process.stdin.isTTY) {

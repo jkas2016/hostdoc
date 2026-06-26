@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { generateCode, isValidSlug, SLUG_RE } from "../src/lib/code.js";
+import { generateCode, isValidSlug, isValidCode, SLUG_RE } from "../src/lib/code.js";
 
 describe("generateCode", () => {
   it("returns 7 base62 chars by default", () => {
@@ -28,4 +28,19 @@ describe("isValidSlug", () => {
   it("exposes the regex", () => {
     expect(SLUG_RE.test("ok-slug")).toBe(true);
   });
+});
+
+describe("isValidCode", () => {
+  it.each(["spinIYr", "Abc123Z", "7charXX", "abc1234", "doc1", "a"])(
+    "accepts base62 code %j",
+    (s) => {
+      expect(isValidCode(s)).toBe(true);
+    },
+  );
+  it.each(["", "_meta", "a b", "a/b", "x#y", "../escape", "x".repeat(64)])(
+    "rejects %j",
+    (s) => {
+      expect(isValidCode(s)).toBe(false);
+    },
+  );
 });

@@ -1,12 +1,12 @@
 import { resolveConfig, type Overrides } from "../lib/config.js";
 import { buildPublicUrl } from "../lib/url.js";
 import { openInBrowser } from "../lib/browser.js";
-import { isValidSlug } from "../lib/code.js";
+import { isValidSlug, isValidCode } from "../lib/code.js";
 
 export function resolveOpenUrl(
   args: { id: string } & Overrides,
 ): string {
-  if (!isValidSlug(args.id)) {
+  if (!isValidSlug(args.id) && !isValidCode(args.id)) {
     throw new Error(`Invalid id: ${args.id}`);
   }
   const cfg = resolveConfig(args);
