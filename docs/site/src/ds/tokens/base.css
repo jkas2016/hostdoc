@@ -1,0 +1,67 @@
+/* hostdoc — base element styling & prose defaults.
+ * Consumers get sensible typographic defaults the moment they link styles.css.
+ */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--bg-page);
+  color: var(--text-body);
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  line-height: var(--lh-normal);
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4 {
+  color: var(--text-strong);
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--ls-heading);
+  margin: 0;
+}
+h1 { font-size: var(--fs-h1); line-height: var(--lh-tight); letter-spacing: var(--ls-display); }
+h2 { font-size: var(--fs-h2); }
+h3 { font-size: var(--fs-h3); }
+h4 { font-size: var(--fs-h4); }
+
+p { margin: 0 0 1em; }
+strong { color: var(--text-strong); font-weight: var(--fw-semibold); }
+
+a {
+  color: var(--text-link);
+  text-decoration: none;
+  text-underline-offset: 0.18em;
+  text-decoration-thickness: 1px;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+a:hover { color: var(--text-link-hover); text-decoration: underline; }
+
+/* Inline + block code */
+code, kbd, samp, pre {
+  font-family: var(--font-mono);
+  font-feature-settings: "kern" 0, "liga" 0;
+}
+:not(pre) > code {
+  background: var(--bg-sunken);
+  border: var(--bw) solid var(--line);
+  color: var(--ink-800);
+  padding: 0.12em 0.4em;
+  border-radius: var(--r-xs);
+  font-size: 0.875em;
+}
+
+::selection { background: var(--cobalt-100); color: var(--ink-900); }
+
+:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+  border-radius: var(--r-xs);
+}
+
+hr { border: 0; border-top: var(--bw) solid var(--line); margin: var(--space-10) 0; }

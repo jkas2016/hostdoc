@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'docs/guide/**'
+      - 'docs/site/**'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 
@@ -25,9 +25,18 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      # Builds the design-system docs site (Vite SSG). No AWS, no Terraform.
+      - name: Build site
+        working-directory: docs/site
+        run: |
+          npm ci
+          npm run build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: docs/guide
+          path: docs/site/dist/static
       - id: deployment
         uses: actions/deploy-pages@v4

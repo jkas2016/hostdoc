@@ -1,0 +1,9 @@
+/* hostdoc design system — global entry point.
+ * Webfonts are loaded via a <link> in index.html (with preconnect) rather than
+ * an @import here, so font fetches start before the bundle parses.
+ */
+@import './tokens/colors.css';
+@import './tokens/typography.css';
+@import './tokens/spacing.css';
+@import './tokens/effects.css';
+@import './tokens/base.css';

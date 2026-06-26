@@ -1,0 +1,76 @@
+/* hostdoc — color system
+ * Warm-neutral foundation + a single confident cobalt brand accent, with a
+ * terminal-dark surface family for code (this is a CLI tool — code reads as a
+ * real terminal). Semantic colors are functional, never decorative.
+ */
+:root {
+  /* ---- Warm neutral ramp (ink → paper) ---- */
+  --ink-900: #16171c;   /* strongest text, terminal bg base */
+  --ink-800: #23252e;
+  --ink-700: #3a3d47;   /* body on paper when softer than 900 */
+  --ink-600: #51555f;
+  --ink-500: #6b6f7a;   /* muted text, captions */
+  --ink-400: #969aa4;
+  --ink-300: #b9bbc2;   /* disabled text, faint icons */
+  --ink-200: #d8d5cd;   /* hairlines on paper */
+  --ink-100: #ebe8e0;
+  --line:    #e6e2d8;   /* default warm border */
+  --line-strong: #d6d1c4;
+  --surface-sunken: #f4f1e9; /* light code bg, inset wells */
+  --surface: #ffffff;        /* cards, raised surfaces */
+  --paper:   #fbfaf6;        /* page background, warm off-white */
+
+  /* ---- Brand: cobalt ---- */
+  --cobalt-50:  #eef1ff;
+  --cobalt-100: #e0e6ff;
+  --cobalt-200: #c2cdff;
+  --cobalt-300: #97a8ff;
+  --cobalt-400: #5f76f5;
+  --cobalt-500: #2f4fe8;   /* primary brand */
+  --cobalt-600: #2340d6;   /* primary actions */
+  --cobalt-700: #1b32ab;   /* hover / pressed */
+  --cobalt-800: #182a86;
+
+  /* ---- Terminal surface family ---- */
+  --term-bg:     #16171c;
+  --term-bg-2:   #1d1f26;   /* title bar, raised within terminal */
+  --term-line:   #2b2e38;   /* dividers inside terminal */
+  --term-fg:     #e7e4db;   /* default terminal text */
+  --term-muted:  #8b8f9b;   /* comments, secondary */
+  --term-prompt: #5fd39a;   /* the $ prompt + success-y output */
+  --term-cyan:   #62c4d9;   /* flags / paths */
+  --term-amber:  #e6b455;   /* values / warnings in output */
+  --term-violet: #a99bf5;   /* commands */
+
+  /* ---- Semantic ---- */
+  --success-600: #1a8f5c;
+  --success-100: #def0e6;
+  --warning-600: #b9791a;
+  --warning-100: #f7ecd6;
+  --danger-600:  #cf3d2c;
+  --danger-100:  #f8e0dc;
+  --info-600:    var(--cobalt-600);
+  --info-100:    var(--cobalt-50);
+
+  /* ---- Semantic aliases (use these in components) ---- */
+  --bg-page:        var(--paper);
+  --bg-card:        var(--surface);
+  --bg-sunken:      var(--surface-sunken);
+  --bg-code:        var(--term-bg);
+
+  --text-strong:    var(--ink-900);
+  --text-body:      var(--ink-700);
+  --text-muted:     var(--ink-500);
+  --text-faint:     var(--ink-400);
+  --text-inverse:   var(--term-fg);
+  --text-link:      var(--cobalt-600);
+  --text-link-hover:var(--cobalt-700);
+
+  --border-default: var(--line);
+  --border-strong:  var(--line-strong);
+  --border-focus:   var(--cobalt-500);
+
+  --accent:         var(--cobalt-600);
+  --accent-hover:   var(--cobalt-700);
+  --accent-tint:    var(--cobalt-50);
+}
