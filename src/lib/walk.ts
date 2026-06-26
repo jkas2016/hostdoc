@@ -9,23 +9,27 @@ export interface Upload {
   size: number;
 }
 
-async function walkDir(root: string, current: string, out: Upload[]) {
+async function walkDir(root: string, current: string): Promise<Upload[]> {
   const entries = await readdir(current, { withFileTypes: true });
-  for (const e of entries) {
-    const abs = join(current, e.name);
-    if (e.isDirectory()) {
-      await walkDir(root, abs, out);
-    } else if (e.isFile()) {
-      const rel = relative(root, abs).split(sep).join("/");
-      const s = await stat(abs);
-      out.push({
-        key: rel,
-        absPath: abs,
-        contentType: contentTypeFor(e.name),
-        size: s.size,
-      });
-    }
-  }
+  const nested = await Promise.all(
+    entries.map(async (e): Promise<Upload[]> => {
+      const abs = join(current, e.name);
+      if (e.isDirectory()) return walkDir(root, abs);
+      if (e.isFile()) {
+        const s = await stat(abs);
+        return [
+          {
+            key: relative(root, abs).split(sep).join("/"),
+            absPath: abs,
+            contentType: contentTypeFor(e.name),
+            size: s.size,
+          },
+        ];
+      }
+      return [];
+    }),
+  );
+  return nested.flat();
 }
 
 /** Single file → index.html; directory → recursive tree under the same prefix. */
@@ -48,8 +52,7 @@ export async function collectUploads(inputPath: string): Promise<Upload[]> {
     ];
   }
 
-  const out: Upload[] = [];
-  await walkDir(inputPath, inputPath, out);
+  const out = await walkDir(inputPath, inputPath);
   if (out.length === 0) throw new Error(`Folder is empty: ${inputPath}`);
   return out;
 }

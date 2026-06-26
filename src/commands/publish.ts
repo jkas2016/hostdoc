@@ -6,7 +6,10 @@ import { collectUploads, type Upload } from "../lib/walk.js";
 import { buildMeta, metaKey, extractTitle } from "../lib/meta.js";
 import { buildPublicUrl } from "../lib/url.js";
 import { makeCloudFront, invalidate } from "../lib/cloudfront.js";
+import { mapLimit } from "../lib/concurrency.js";
 import type { S3Client } from "@aws-sdk/client-s3";
+
+const UPLOAD_CONCURRENCY = 8;
 
 export interface PublishArgs {
   path: string;
@@ -76,7 +79,7 @@ export async function runPublish(args: PublishArgs): Promise<string> {
     }
   }
 
-  for (const u of uploads) {
+  await mapLimit(uploads, UPLOAD_CONCURRENCY, async (u) => {
     await putObject(
       s3,
       cfg.bucket,
@@ -84,7 +87,7 @@ export async function runPublish(args: PublishArgs): Promise<string> {
       await readFile(u.absPath),
       u.contentType,
     );
-  }
+  });
 
   const title = args.title ?? (await deriveTitle(uploads));
   const meta = buildMeta({

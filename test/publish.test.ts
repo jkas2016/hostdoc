@@ -119,4 +119,32 @@ describe("runPublish", () => {
     delete process.env.HOSTDOC_DOMAIN;
     delete process.env.HOSTDOC_DISTRIBUTION;
   });
+
+  it("writes no meta and does not invalidate when an upload fails", async () => {
+    process.env.HOSTDOC_DOMAIN = "shared.example.com";
+    process.env.HOSTDOC_DISTRIBUTION = "DIST1";
+    // existing keys → overwrite path would invalidate on success
+    s3mock.on(ListObjectsV2Command).resolves({
+      KeyCount: 1,
+      Contents: [{ Key: "doc1/index.html" }],
+      IsTruncated: false,
+    });
+    s3mock.on(PutObjectCommand).rejects(new Error("network down"));
+    writeFileSync(join(dir, "index.html"), "x");
+    mkdirSync(join(dir, "assets"));
+    writeFileSync(join(dir, "assets", "a.css"), "body{}");
+
+    await expect(
+      runPublish({ path: dir, slug: "doc1", force: true }),
+    ).rejects.toThrow(/network down/);
+
+    const puts = s3mock
+      .commandCalls(PutObjectCommand)
+      .map((c) => c.args[0].input.Key);
+    expect(puts).not.toContain("_meta/doc1.json");
+    expect(cfMock.commandCalls(CreateInvalidationCommand)).toHaveLength(0);
+
+    delete process.env.HOSTDOC_DOMAIN;
+    delete process.env.HOSTDOC_DISTRIBUTION;
+  });
 });
