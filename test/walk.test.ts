@@ -41,4 +41,15 @@ describe("collectUploads", () => {
     mkdirSync(empty);
     await expect(collectUploads(empty)).rejects.toThrow(/empty/);
   });
+
+  it("walks a deeply nested tree, preserving all keys", async () => {
+    writeFileSync(join(dir, "index.html"), "<html></html>");
+    mkdirSync(join(dir, "a"));
+    mkdirSync(join(dir, "a", "b"));
+    writeFileSync(join(dir, "a", "top.css"), "body{}");
+    writeFileSync(join(dir, "a", "b", "deep.js"), "//x");
+    const ups = await collectUploads(dir);
+    const keys = ups.map((u) => u.key).sort();
+    expect(keys).toEqual(["a/b/deep.js", "a/top.css", "index.html"]);
+  });
 });
