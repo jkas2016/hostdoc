@@ -18,7 +18,7 @@ export function isValidSlug(slug: string): boolean {
   return SLUG_RE.test(slug);
 }
 
-/** Generated codes: base62 (mixed case), 1–63 chars. No leading `_`, `/`, or space. */
+/** Generated codes: base62 (mixed case), 1–63 chars; rejects `_`, `/`, spaces, and any non-base62 char. */
 export const CODE_RE = /^[0-9A-Za-z]{1,63}$/;
 
 export function isValidCode(id: string): boolean {
