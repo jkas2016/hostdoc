@@ -49,12 +49,18 @@ describe("resolveOpenUrl", () => {
     );
   });
 
-  it.each(["a b", "../escape", "x?y", "x#y", "Doc1", "_meta"])(
+  it.each(["a b", "../escape", "x?y", "x#y", "_meta"])(
     "rejects invalid id %j",
     (id) => {
       expect(() => resolveOpenUrl({ id })).toThrow(/invalid id/i);
     },
   );
+
+  it("accepts an uppercase-containing generated code", () => {
+    expect(resolveOpenUrl({ id: "spinIYr" })).toBe(
+      "http://b.s3-website-us-east-1.amazonaws.com/spinIYr/",
+    );
+  });
 });
 
 describe("describeConfig", () => {

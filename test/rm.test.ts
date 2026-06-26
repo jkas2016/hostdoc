@@ -77,7 +77,7 @@ describe("runRm", () => {
     delete process.env.HOSTDOC_DISTRIBUTION;
   });
 
-  it.each(["_meta", "../escape", "a b", "Doc1", "x/y", "x?y"])(
+  it.each(["_meta", "../escape", "a b", "x/y", "x?y"])(
     "rejects invalid id %j before deleting anything",
     async (id) => {
       s3mock.on(ListObjectsV2Command).resolves({ Contents: [], IsTruncated: false });
@@ -88,6 +88,21 @@ describe("runRm", () => {
       expect(s3mock.commandCalls(ListObjectsV2Command)).toHaveLength(0);
     },
   );
+
+  it("accepts an uppercase-containing generated code", async () => {
+    s3mock
+      .on(ListObjectsV2Command)
+      .resolves({ Contents: [{ Key: "spinIYr/index.html" }], IsTruncated: false });
+    s3mock.on(DeleteObjectsCommand).resolves({});
+
+    await runRm({ id: "spinIYr", yes: true });
+
+    const deleted = s3mock
+      .commandCalls(DeleteObjectsCommand)[0]
+      .args[0].input.Delete?.Objects?.map((o) => o.Key);
+    expect(deleted).toContain("spinIYr/index.html");
+    expect(deleted).toContain("_meta/spinIYr.json");
+  });
 
   it("prompts for confirmation and aborts without deleting when declined", async () => {
     setTTY(true);
