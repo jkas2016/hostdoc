@@ -105,6 +105,7 @@ describe("runRm", () => {
       .commandCalls(DeleteObjectsCommand)[0]
       .args[0].input.Delete?.Objects?.map((o) => o.Key);
     expect(deleted).toContain("team/q1/report/index.html");
+    expect(deleted).toContain("team/q1/report/a.css");
     expect(deleted).toContain("_meta/team/q1/report.json");
   });
 
