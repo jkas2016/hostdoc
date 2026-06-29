@@ -44,6 +44,9 @@ output "publisher_policy_json" {
   value = local.publisher_policy_json
 }
 
+# create_publisher_user = true stores this secret in PLAINTEXT in terraform.tfstate.
+# Keep state private. Rotate: terraform apply -replace='aws_iam_access_key.publisher[0]'.
+# Remove: set create_publisher_user = false and re-apply (or destroy).
 output "publisher_access_key_id" {
   value     = var.create_publisher_user ? aws_iam_access_key.publisher[0].id : null
   sensitive = true

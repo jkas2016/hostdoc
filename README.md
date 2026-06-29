@@ -86,7 +86,9 @@ automated path.
 
 The Terraform `publisher_policy_json` output is a minimal IAM policy for
 publishing. Prefer a dedicated IAM user (`create_publisher_user = true`) over
-root credentials for day-to-day `hostdoc` use.
+root credentials for day-to-day `hostdoc` use. Enabling it stores the
+access-key secret in plaintext in `terraform.tfstate`; keep state private and
+rotate/destroy the key when done.
 
 ## Use with an agent (skill)
 
