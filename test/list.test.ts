@@ -54,6 +54,19 @@ describe("listDocs", () => {
     warn.mockRestore();
   });
 
+  it("builds the correct URL for a nested-path code", async () => {
+    s3mock
+      .on(ListObjectsV2Command)
+      .resolves({ Contents: [{ Key: "_meta/team/q1/report.json" }], IsTruncated: false });
+    s3mock
+      .on(GetObjectCommand, { Key: "_meta/team/q1/report.json" })
+      .resolves({ Body: { transformToString: async () => JSON.stringify({ code: "team/q1/report", slug: null, title: "Report", createdAt: "2026-03-01T00:00:00Z", files: 1, bytes: 1, sourcePath: "/report" }) } as any });
+
+    const rows = await listDocs({});
+    expect(rows).toHaveLength(1);
+    expect(rows[0].url).toBe("http://b.s3-website-us-east-1.amazonaws.com/team/q1/report/");
+  });
+
   it("skips a sidecar missing createdAt without crashing the sort", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     s3mock

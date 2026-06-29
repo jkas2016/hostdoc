@@ -57,6 +57,11 @@ describe("runRm", () => {
     await expect(runRm({ id: "ghost", yes: true })).rejects.toThrow(/not found/);
   });
 
+  it("throws not-found for a nested id that does not exist", async () => {
+    s3mock.on(ListObjectsV2Command).resolves({ Contents: [], IsTruncated: false });
+    await expect(runRm({ id: "team/q1/report", yes: true })).rejects.toThrow(/not found/);
+  });
+
   it("invalidates /<id>/* in cloudfront mode", async () => {
     process.env.HOSTDOC_DOMAIN = "shared.example.com";
     process.env.HOSTDOC_DISTRIBUTION = "DIST1";
