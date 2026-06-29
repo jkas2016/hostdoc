@@ -143,7 +143,7 @@ Terraform CLI(v1.15.6 설치 확인됨) + TS 회귀 sanity로 한다.
 ## Acceptance criteria (from issue)
 
 - [ ] Route53 조회가 public 영역으로 명확히 한정된다(`private_zone = false`).
-- [ ] `price_class`가 plan/validate 시점에 검증된다.
+- [ ] `price_class`가 plan 시점에 검증된다(`validate`는 이 TF 버전에서 변수 validation 미평가).
 - [ ] 모든 변수에 description이 있고, IAM 키 처리 방식(평문 state·회전·제거)이 문서화된다.
 - [ ] (추가) OAC 정책이 `SourceArn` + `SourceAccount` 심층방어를 사용한다.
 
