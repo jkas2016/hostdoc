@@ -61,6 +61,12 @@ describe("resolveOpenUrl", () => {
       "http://b.s3-website-us-east-1.amazonaws.com/spinIYr/",
     );
   });
+
+  it("builds the URL for a nested path", () => {
+    expect(resolveOpenUrl({ id: "team/q1/report" })).toBe(
+      "http://b.s3-website-us-east-1.amazonaws.com/team/q1/report/",
+    );
+  });
 });
 
 describe("describeConfig", () => {

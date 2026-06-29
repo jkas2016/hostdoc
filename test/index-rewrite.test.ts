@@ -35,4 +35,19 @@ describe("index-rewrite handler", () => {
     const out = handler(reqEvent("/_meta/x7Kq2a.json"));
     expect(out.statusCode).toBe(403);
   });
+
+  it("appends index.html for a nested trailing-slash URI", () => {
+    const out = handler(reqEvent("/team/q1/report/"));
+    expect(out.uri).toBe("/team/q1/report/index.html");
+  });
+
+  it("appends /index.html for a nested extensionless URI", () => {
+    const out = handler(reqEvent("/team/q1/report"));
+    expect(out.uri).toBe("/team/q1/report/index.html");
+  });
+
+  it("returns 403 for a nested underscore-prefixed meta path", () => {
+    const out = handler(reqEvent("/_meta/team/q1/report.json"));
+    expect(out.statusCode).toBe(403);
+  });
 });

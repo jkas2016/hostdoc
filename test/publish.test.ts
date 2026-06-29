@@ -147,4 +147,52 @@ describe("runPublish", () => {
     delete process.env.HOSTDOC_DOMAIN;
     delete process.env.HOSTDOC_DISTRIBUTION;
   });
+
+  it("uploads under a nested slug and returns the nested URL", async () => {
+    writeFileSync(join(dir, "index.html"), "<title>Hi</title>");
+    mkdirSync(join(dir, "assets"));
+    writeFileSync(join(dir, "assets", "a.css"), "body{}");
+
+    const url = await runPublish({ path: dir, slug: "team/q1/report" });
+    expect(url).toBe("http://b.s3-website-us-east-1.amazonaws.com/team/q1/report/");
+
+    const puts = s3mock
+      .commandCalls(PutObjectCommand)
+      .map((c) => c.args[0].input.Key);
+    expect(puts).toContain("team/q1/report/index.html");
+    expect(puts).toContain("team/q1/report/assets/a.css");
+    expect(puts).toContain("_meta/team/q1/report.json");
+  });
+
+  it("returns the nested URL and invalidates the nested prefix in cloudfront mode", async () => {
+    process.env.HOSTDOC_DOMAIN = "shared.example.com";
+    process.env.HOSTDOC_DISTRIBUTION = "DIST1";
+    s3mock.on(ListObjectsV2Command).resolves({
+      KeyCount: 1,
+      Contents: [{ Key: "team/q1/report/index.html" }],
+      IsTruncated: false,
+    });
+    writeFileSync(join(dir, "index.html"), "x");
+
+    const url = await runPublish({ path: dir, slug: "team/q1/report", force: true });
+    expect(url).toBe("https://shared.example.com/team/q1/report/");
+
+    const calls = cfMock.commandCalls(CreateInvalidationCommand);
+    expect(calls).toHaveLength(1);
+    expect(calls[0].args[0].input.InvalidationBatch?.Paths?.Items).toEqual([
+      "/team/q1/report/*",
+    ]);
+
+    delete process.env.HOSTDOC_DOMAIN;
+    delete process.env.HOSTDOC_DISTRIBUTION;
+  });
+
+  it.each(["team/_x", "../etc", "a//b"])(
+    "rejects an invalid nested slug %j and uploads nothing",
+    async (slug) => {
+      writeFileSync(join(dir, "index.html"), "x");
+      await expect(runPublish({ path: dir, slug })).rejects.toThrow(/slug/i);
+      expect(s3mock.commandCalls(PutObjectCommand)).toHaveLength(0);
+    },
+  );
 });

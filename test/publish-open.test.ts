@@ -36,4 +36,13 @@ describe("openPublishedUrl", () => {
     );
     expect(url).toBe("http://envbkt.s3-website-us-east-1.amazonaws.com/abc/");
   });
+
+  it("derives a nested path from the published URL", () => {
+    const url = openPublishedUrl(
+      "http://envbkt.s3-website-us-east-1.amazonaws.com/team/q1/report/",
+    );
+    expect(url).toBe(
+      "http://envbkt.s3-website-us-east-1.amazonaws.com/team/q1/report/",
+    );
+  });
 });

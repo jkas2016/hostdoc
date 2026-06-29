@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { generateCode, isValidSlug, isValidCode, SLUG_RE } from "../src/lib/code.js";
+import { generateCode, isValidPath, isValidCode, SLUG_RE } from "../src/lib/code.js";
 
 describe("generateCode", () => {
   it("returns 7 base62 chars by default", () => {
@@ -31,16 +31,29 @@ describe("generateCode", () => {
   });
 });
 
-describe("isValidSlug", () => {
-  it.each(["a", "aws-design", "doc1", "a-b-c"])("accepts %s", (s) => {
-    expect(isValidSlug(s)).toBe(true);
-  });
-  it.each(["", "-lead", "_meta", "UpperCase", "has space", "a/b", "x".repeat(64)])(
-    "rejects %s",
-    (s) => {
-      expect(isValidSlug(s)).toBe(false);
+describe("isValidPath", () => {
+  it.each(["a", "report", "team/q1/report", "a/b", "aws-design", "a".repeat(63)])(
+    "accepts %j",
+    (p) => {
+      expect(isValidPath(p)).toBe(true);
     },
   );
+  it.each([
+    "",
+    "team//q1",
+    "/team",
+    "team/",
+    "../etc",
+    "team/..",
+    ".",
+    "team/_x",
+    "_meta/x",
+    "UpperCase",
+    "has space",
+    "team/" + "x".repeat(64),
+  ])("rejects %j", (p) => {
+    expect(isValidPath(p)).toBe(false);
+  });
   it("exposes the regex", () => {
     expect(SLUG_RE.test("ok-slug")).toBe(true);
   });

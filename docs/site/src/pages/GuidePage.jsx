@@ -135,6 +135,7 @@ function QuickstartSection() {
         { type: 'comment', text: '# 2) publish a file or a folder' },
         { type: 'cmd', text: 'hostdoc publish ./report.html' },
         { type: 'cmd', text: 'hostdoc publish ./site/ --slug aws-design' },
+        { type: 'cmd', text: 'hostdoc publish ./site/ --slug team/q1/report' },
         { type: 'comment', text: '# 3) manage' },
         { type: 'cmd', text: 'hostdoc list' },
         { type: 'cmd', text: 'hostdoc open aws-design' },
