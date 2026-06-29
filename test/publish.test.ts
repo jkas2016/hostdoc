@@ -7,6 +7,7 @@ import {
   S3Client,
   PutObjectCommand,
   ListObjectsV2Command,
+  DeleteObjectsCommand,
 } from "@aws-sdk/client-s3";
 import { CloudFrontClient, CreateInvalidationCommand } from "@aws-sdk/client-cloudfront";
 import { runPublish } from "../src/commands/publish.js";
@@ -195,4 +196,47 @@ describe("runPublish", () => {
       expect(s3mock.commandCalls(PutObjectCommand)).toHaveLength(0);
     },
   );
+
+  it("force-overwrite deletes nested child sidecars and rewrites its own", async () => {
+    writeFileSync(join(dir, "index.html"), "<title>Hi</title>");
+    s3mock
+      .on(ListObjectsV2Command, { Prefix: "team/" })
+      .resolves({ KeyCount: 1, Contents: [{ Key: "team/index.html" }], IsTruncated: false });
+    s3mock
+      .on(ListObjectsV2Command, { Prefix: "_meta/team/" })
+      .resolves({ Contents: [{ Key: "_meta/team/q1/report.json" }], IsTruncated: false });
+    s3mock.on(DeleteObjectsCommand).resolves({});
+
+    await runPublish({ path: dir, slug: "team", force: true });
+
+    const deleted = s3mock
+      .commandCalls(DeleteObjectsCommand)
+      .flatMap((c) => c.args[0].input.Delete?.Objects?.map((o) => o.Key) ?? []);
+    expect(deleted).toContain("team/index.html");
+    expect(deleted).toContain("_meta/team/q1/report.json");
+    expect(deleted).not.toContain("_meta/team.json"); // own sidecar is rewritten, not deleted
+
+    const putKeys = s3mock
+      .commandCalls(PutObjectCommand)
+      .map((c) => c.args[0].input.Key);
+    expect(putKeys).toContain("_meta/team.json");
+  });
+
+  it("force-overwrite with no nested children deletes no extra sidecars", async () => {
+    writeFileSync(join(dir, "index.html"), "<title>Hi</title>");
+    s3mock
+      .on(ListObjectsV2Command, { Prefix: "team/" })
+      .resolves({ KeyCount: 1, Contents: [{ Key: "team/index.html" }], IsTruncated: false });
+    s3mock
+      .on(ListObjectsV2Command, { Prefix: "_meta/team/" })
+      .resolves({ Contents: [], IsTruncated: false });
+    s3mock.on(DeleteObjectsCommand).resolves({});
+
+    await runPublish({ path: dir, slug: "team", force: true });
+
+    const deleted = s3mock
+      .commandCalls(DeleteObjectsCommand)
+      .flatMap((c) => c.args[0].input.Delete?.Objects?.map((o) => o.Key) ?? []);
+    expect(deleted).toEqual(["team/index.html"]);
+  });
 });

@@ -189,4 +189,40 @@ describe("runRm", () => {
     expect(confirmMock).not.toHaveBeenCalled();
     expect(s3mock.commandCalls(DeleteObjectsCommand)).toHaveLength(0);
   });
+
+  it("deletes nested child sidecars under the parent prefix", async () => {
+    s3mock
+      .on(ListObjectsV2Command, { Prefix: "team/" })
+      .resolves({ Contents: [{ Key: "team/index.html" }], IsTruncated: false });
+    s3mock
+      .on(ListObjectsV2Command, { Prefix: "_meta/team/" })
+      .resolves({ Contents: [{ Key: "_meta/team/q1/report.json" }], IsTruncated: false });
+    s3mock.on(DeleteObjectsCommand).resolves({});
+
+    await runRm({ id: "team", yes: true });
+
+    const deleted = s3mock
+      .commandCalls(DeleteObjectsCommand)[0]
+      .args[0].input.Delete?.Objects?.map((o) => o.Key);
+    expect(deleted).toContain("team/index.html");
+    expect(deleted).toContain("_meta/team.json");
+    expect(deleted).toContain("_meta/team/q1/report.json");
+  });
+
+  it("deletes only the own sidecar when there are no nested children", async () => {
+    s3mock
+      .on(ListObjectsV2Command, { Prefix: "doc1/" })
+      .resolves({ Contents: [{ Key: "doc1/index.html" }], IsTruncated: false });
+    s3mock
+      .on(ListObjectsV2Command, { Prefix: "_meta/doc1/" })
+      .resolves({ Contents: [], IsTruncated: false });
+    s3mock.on(DeleteObjectsCommand).resolves({});
+
+    await runRm({ id: "doc1", yes: true });
+
+    const deleted = s3mock
+      .commandCalls(DeleteObjectsCommand)[0]
+      .args[0].input.Delete?.Objects?.map((o) => o.Key);
+    expect(deleted).toEqual(["doc1/index.html", "_meta/doc1.json"]);
+  });
 });

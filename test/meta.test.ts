@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { metaKey, extractTitle, buildMeta } from "../src/lib/meta.js";
+import { metaKey, nestedMetaPrefix, extractTitle, buildMeta } from "../src/lib/meta.js";
 import type { Upload } from "../src/lib/walk.js";
 
 describe("metaKey", () => {
@@ -16,6 +16,16 @@ describe("extractTitle", () => {
   });
   it("returns null when no title", () => {
     expect(extractTitle("<html></html>")).toBeNull();
+  });
+});
+
+describe("nestedMetaPrefix", () => {
+  it("returns the sidecar prefix for a top-level code", () => {
+    expect(nestedMetaPrefix("team")).toBe("_meta/team/");
+  });
+
+  it("returns the sidecar prefix for a nested code", () => {
+    expect(nestedMetaPrefix("team/q1/report")).toBe("_meta/team/q1/report/");
   });
 });
 

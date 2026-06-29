@@ -14,6 +14,10 @@ export function metaKey(code: string): string {
   return `_meta/${code}.json`;
 }
 
+export function nestedMetaPrefix(code: string): string {
+  return `_meta/${code}/`; // code 아래 사는 모든 문서의 사이드카 prefix
+}
+
 /** Runtime guard: sidecar JSON has the fields list relies on (code + createdAt). */
 export function isValidMeta(v: unknown): v is Meta {
   if (typeof v !== "object" || v === null) return false;

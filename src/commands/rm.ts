@@ -1,6 +1,6 @@
 import { makeS3, listKeys, deleteKeys } from "../lib/aws.js";
 import { resolveConfig, type Overrides } from "../lib/config.js";
-import { metaKey } from "../lib/meta.js";
+import { metaKey, nestedMetaPrefix } from "../lib/meta.js";
 import { makeCloudFront, invalidate } from "../lib/cloudfront.js";
 import { isValidPath, isValidCode } from "../lib/code.js";
 import { confirm } from "../lib/prompt.js";
@@ -32,7 +32,8 @@ export async function runRm(
     if (!ok) throw new Error("Aborted.");
   }
 
-  await deleteKeys(s3, cfg.bucket, [...keys, metaKey(args.id)]);
+  const nestedMeta = await listKeys(s3, cfg.bucket, nestedMetaPrefix(args.id));
+  await deleteKeys(s3, cfg.bucket, [...keys, metaKey(args.id), ...nestedMeta]);
   if (cfg.mode === "cloudfront" && cfg.distributionId) {
     const cf = makeCloudFront({ profile: args.profile });
     await invalidate(cf, cfg.distributionId, [`/${args.id}/*`]);
