@@ -137,7 +137,7 @@ program
 
 withCommon(program.command("publish <path>"))
   .description("Publish a file or folder; prints the public URL")
-  .option("--slug <name>", "custom slug instead of a random code")
+  .option("--slug <path>", "custom path instead of a random code; '/' allowed for nested paths (e.g. team/q1/report)")
   .option("--title <title>", "override the document title")
   .option("--force", "overwrite an existing slug")
   .option("--open", "open the URL in your browser")

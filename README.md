@@ -23,6 +23,7 @@ hostdoc setup --bucket my-unique-bucket --region us-east-1
 # 2) Publish
 hostdoc publish ./report.html            # → http://<bucket>.s3-website-...amazonaws.com/<code>/
 hostdoc publish ./site/ --slug aws-design
+hostdoc publish ./site/ --slug team/q1/report   # nested path → .../team/q1/report/
 
 # 3) Manage
 hostdoc list

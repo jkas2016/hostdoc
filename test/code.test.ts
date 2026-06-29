@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { generateCode, isValidSlug, isValidPath, isValidCode, SLUG_RE } from "../src/lib/code.js";
+import { generateCode, isValidPath, isValidCode, SLUG_RE } from "../src/lib/code.js";
 
 describe("generateCode", () => {
   it("returns 7 base62 chars by default", () => {
@@ -28,21 +28,6 @@ describe("generateCode", () => {
     const ratio = mean(ALPHABET.slice(0, 8)) / mean(ALPHABET.slice(8));
     // Biased impl ~1.25, uniform ~1.0 (±~0.012 over 100k); 1.1 separates them.
     expect(ratio).toBeLessThan(1.1);
-  });
-});
-
-describe("isValidSlug", () => {
-  it.each(["a", "aws-design", "doc1", "a-b-c"])("accepts %s", (s) => {
-    expect(isValidSlug(s)).toBe(true);
-  });
-  it.each(["", "-lead", "_meta", "UpperCase", "has space", "a/b", "x".repeat(64)])(
-    "rejects %s",
-    (s) => {
-      expect(isValidSlug(s)).toBe(false);
-    },
-  );
-  it("exposes the regex", () => {
-    expect(SLUG_RE.test("ok-slug")).toBe(true);
   });
 });
 

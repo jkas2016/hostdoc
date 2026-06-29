@@ -14,10 +14,6 @@ export function generateCode(len = 7): string {
 /** Lowercase letters/digits/hyphen, must start alphanumeric, 1–63 chars. */
 export const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,62}$/;
 
-export function isValidSlug(slug: string): boolean {
-  return SLUG_RE.test(slug);
-}
-
 /** Multi-segment publish path: each "/"-separated segment must match SLUG_RE. */
 export function isValidPath(path: string): boolean {
   return path.split("/").every((seg) => SLUG_RE.test(seg));
