@@ -3,7 +3,7 @@ import { makeS3, putObject, listKeys, existsPrefix, deleteKeys } from "../lib/aw
 import { resolveConfig } from "../lib/config.js";
 import { generateCode, isValidPath } from "../lib/code.js";
 import { collectUploads, type Upload } from "../lib/walk.js";
-import { buildMeta, metaKey, extractTitle } from "../lib/meta.js";
+import { buildMeta, metaKey, nestedMetaPrefix, extractTitle } from "../lib/meta.js";
 import { buildPublicUrl } from "../lib/url.js";
 import { makeCloudFront, invalidate } from "../lib/cloudfront.js";
 import { mapLimit } from "../lib/concurrency.js";
@@ -74,7 +74,8 @@ export async function runPublish(args: PublishArgs): Promise<string> {
   if (args.force) {
     const existing = await listKeys(s3, cfg.bucket, `${code}/`);
     if (existing.length) {
-      await deleteKeys(s3, cfg.bucket, existing);
+      const nestedMeta = await listKeys(s3, cfg.bucket, nestedMetaPrefix(code));
+      await deleteKeys(s3, cfg.bucket, [...existing, ...nestedMeta]);
       overwritten = true;
     }
   }
