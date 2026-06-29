@@ -77,7 +77,7 @@ describe("runRm", () => {
     delete process.env.HOSTDOC_DISTRIBUTION;
   });
 
-  it.each(["_meta", "../escape", "a b", "x/y", "x?y"])(
+  it.each(["_meta", "../escape", "a b", "x//y", "x/_y", "x?y"])(
     "rejects invalid id %j before deleting anything",
     async (id) => {
       s3mock.on(ListObjectsV2Command).resolves({ Contents: [], IsTruncated: false });
@@ -88,6 +88,45 @@ describe("runRm", () => {
       expect(s3mock.commandCalls(ListObjectsV2Command)).toHaveLength(0);
     },
   );
+
+  it("deletes a nested prefix plus its nested meta object", async () => {
+    s3mock.on(ListObjectsV2Command).resolves({
+      Contents: [
+        { Key: "team/q1/report/index.html" },
+        { Key: "team/q1/report/a.css" },
+      ],
+      IsTruncated: false,
+    });
+    s3mock.on(DeleteObjectsCommand).resolves({});
+
+    await runRm({ id: "team/q1/report", yes: true });
+
+    const deleted = s3mock
+      .commandCalls(DeleteObjectsCommand)[0]
+      .args[0].input.Delete?.Objects?.map((o) => o.Key);
+    expect(deleted).toContain("team/q1/report/index.html");
+    expect(deleted).toContain("_meta/team/q1/report.json");
+  });
+
+  it("invalidates the nested prefix in cloudfront mode", async () => {
+    process.env.HOSTDOC_DOMAIN = "shared.example.com";
+    process.env.HOSTDOC_DISTRIBUTION = "DIST1";
+    s3mock.on(ListObjectsV2Command).resolves({
+      Contents: [{ Key: "team/q1/report/index.html" }],
+      IsTruncated: false,
+    });
+    s3mock.on(DeleteObjectsCommand).resolves({});
+
+    await runRm({ id: "team/q1/report", yes: true });
+
+    const calls = cfMock.commandCalls(CreateInvalidationCommand);
+    expect(calls[0].args[0].input.InvalidationBatch?.Paths?.Items).toEqual([
+      "/team/q1/report/*",
+    ]);
+
+    delete process.env.HOSTDOC_DOMAIN;
+    delete process.env.HOSTDOC_DISTRIBUTION;
+  });
 
   it("accepts an uppercase-containing generated code", async () => {
     s3mock
