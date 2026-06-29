@@ -18,6 +18,11 @@ export function isValidSlug(slug: string): boolean {
   return SLUG_RE.test(slug);
 }
 
+/** Multi-segment publish path: each "/"-separated segment must match SLUG_RE. */
+export function isValidPath(path: string): boolean {
+  return path.split("/").every((seg) => SLUG_RE.test(seg));
+}
+
 /** Generated codes: base62 (mixed case), 1–63 chars; rejects `_`, `/`, spaces, and any non-base62 char. */
 export const CODE_RE = /^[0-9A-Za-z]{1,63}$/;
 
