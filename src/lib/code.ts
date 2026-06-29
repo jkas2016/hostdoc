@@ -1,13 +1,13 @@
-import { randomBytes } from "node:crypto";
+import { randomInt } from "node:crypto";
 
 const ALPHABET =
   "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 /** Random base62 identifier. Default 7 chars ≈ 62^7 ≈ 3.5e12 possibilities. */
 export function generateCode(len = 7): string {
-  const bytes = randomBytes(len);
+  // randomInt is uniform over [0, 62); a plain `byte % 62` would bias '0'-'7'.
   let out = "";
-  for (let i = 0; i < len; i++) out += ALPHABET[bytes[i] % 62];
+  for (let i = 0; i < len; i++) out += ALPHABET[randomInt(ALPHABET.length)];
   return out;
 }
 

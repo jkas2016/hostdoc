@@ -1,6 +1,5 @@
-import { terraform } from "../lib/terraform.js";
-import { extractTemplates } from "../lib/templates.js";
-import { ensureTfvars, type TfvarsFlags } from "../lib/tfvars.js";
+import { terraform, prepareInfra, approvable } from "../lib/terraform.js";
+import type { TfvarsFlags } from "../lib/tfvars.js";
 import { runInit } from "./init.js";
 import type { Config } from "../lib/config.js";
 
@@ -17,15 +16,8 @@ export function runProvision(args: {
   approve?: boolean;
   flags?: TfvarsFlags;
 }): Config {
-  extractTemplates(args.dir);
-  ensureTfvars(args.dir, args.flags ?? {});
-
   // init is always non-interactive; the apply prompt is the human gate.
-  terraform(args.dir, ["init", "-input=false"]);
-
-  const applyArgs = ["apply"];
-  if (args.approve) applyArgs.push("-auto-approve");
-  terraform(args.dir, applyArgs);
-
+  prepareInfra(args.dir, args.flags);
+  terraform(args.dir, approvable("apply", args.approve));
   return runInit({ dir: args.dir });
 }

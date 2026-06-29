@@ -5,23 +5,17 @@
 import { mkdirSync, copyFileSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+// Single source of truth: `tsc` runs before this script (npm run build), so the
+// compiled allowlist exists in dist/. Re-declaring it here would risk drift.
+import { TEMPLATE_FILES } from "../dist/lib/templates.js";
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const SRC = join(ROOT, "infra");
 const DEST = join(ROOT, "dist", "templates", "infra");
 
-const FILES = [
-  "main.tf",
-  "variables.tf",
-  "outputs.tf",
-  "index-rewrite.js",
-  "terraform.tfvars.example",
-  ".terraform.lock.hcl",
-];
-
 rmSync(DEST, { recursive: true, force: true });
 mkdirSync(DEST, { recursive: true });
-for (const f of FILES) {
+for (const f of TEMPLATE_FILES) {
   copyFileSync(join(SRC, f), join(DEST, f));
 }
-console.log(`Copied ${FILES.length} template files to dist/templates/infra/`);
+console.log(`Copied ${TEMPLATE_FILES.length} template files to dist/templates/infra/`);
