@@ -13,6 +13,22 @@ describe("generateCode", () => {
     const codes = new Set(Array.from({ length: 50 }, () => generateCode()));
     expect(codes.size).toBeGreaterThan(40);
   });
+  it("produces a near-uniform distribution (no modulo bias)", () => {
+    // A `byte % 62` mapping over-represents the first 8 alphabet chars ('0'-'7')
+    // by ~25% (256 = 4*62 + 8). A uniform generator keeps every char equal.
+    const ALPHABET =
+      "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const counts = new Map<string, number>();
+    for (const ch of generateCode(100_000)) {
+      counts.set(ch, (counts.get(ch) ?? 0) + 1);
+    }
+    expect(counts.size).toBe(62); // every alphabet char appears
+    const mean = (chars: string) =>
+      [...chars].reduce((s, c) => s + (counts.get(c) ?? 0), 0) / chars.length;
+    const ratio = mean(ALPHABET.slice(0, 8)) / mean(ALPHABET.slice(8));
+    // Biased impl ~1.25, uniform ~1.0 (±~0.012 over 100k); 1.1 separates them.
+    expect(ratio).toBeLessThan(1.1);
+  });
 });
 
 describe("isValidSlug", () => {

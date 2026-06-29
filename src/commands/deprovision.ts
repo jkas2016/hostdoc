@@ -1,6 +1,5 @@
-import { terraform } from "../lib/terraform.js";
-import { extractTemplates } from "../lib/templates.js";
-import { ensureTfvars, type TfvarsFlags } from "../lib/tfvars.js";
+import { terraform, prepareInfra, approvable } from "../lib/terraform.js";
+import type { TfvarsFlags } from "../lib/tfvars.js";
 
 /**
  * Tear down the domain (CloudFront) infrastructure via Terraform. Extracts the
@@ -15,13 +14,7 @@ export function runDeprovision(args: {
   approve?: boolean;
   flags?: TfvarsFlags;
 }): void {
-  extractTemplates(args.dir);
-  ensureTfvars(args.dir, args.flags ?? {});
-
   // init is always non-interactive; the destroy prompt is the human gate.
-  terraform(args.dir, ["init", "-input=false"]);
-
-  const destroyArgs = ["destroy"];
-  if (args.approve) destroyArgs.push("-auto-approve");
-  terraform(args.dir, destroyArgs);
+  prepareInfra(args.dir, args.flags);
+  terraform(args.dir, approvable("destroy", args.approve));
 }
