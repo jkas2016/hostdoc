@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { makeS3, putObject, listKeys, existsPrefix, deleteKeys } from "../lib/aws.js";
 import { resolveConfig } from "../lib/config.js";
-import { generateCode, isValidSlug } from "../lib/code.js";
+import { generateCode, isValidPath } from "../lib/code.js";
 import { collectUploads, type Upload } from "../lib/walk.js";
 import { buildMeta, metaKey, extractTitle } from "../lib/meta.js";
 import { buildPublicUrl } from "../lib/url.js";
@@ -50,9 +50,9 @@ export async function runPublish(args: PublishArgs): Promise<string> {
 
   let code: string;
   if (args.slug) {
-    if (!isValidSlug(args.slug)) {
+    if (!isValidPath(args.slug)) {
       throw new Error(
-        `Invalid slug "${args.slug}". Use lowercase letters, digits, and hyphens (must start alphanumeric).`,
+        `Invalid slug "${args.slug}". Use lowercase letters, digits, and hyphens per path segment (each segment must start alphanumeric); "/" separates nested segments.`,
       );
     }
     if (!args.dryRun) {
