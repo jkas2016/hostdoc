@@ -24,12 +24,15 @@ locals {
 }
 
 data "aws_route53_zone" "this" {
-  name = var.hosted_zone_name
+  name         = var.hosted_zone_name
+  private_zone = false
 }
 
 data "aws_cloudfront_cache_policy" "optimized" {
   name = "Managed-CachingOptimized"
 }
+
+data "aws_caller_identity" "current" {}
 
 # --- Private S3 bucket (OAC origin) ---
 resource "aws_s3_bucket" "site" {
@@ -146,7 +149,10 @@ resource "aws_s3_bucket_policy" "site" {
       Action    = "s3:GetObject"
       Resource  = "${aws_s3_bucket.site.arn}/*"
       Condition = {
-        StringEquals = { "AWS:SourceArn" = aws_cloudfront_distribution.site.arn }
+        StringEquals = {
+          "AWS:SourceArn"     = aws_cloudfront_distribution.site.arn
+          "AWS:SourceAccount" = data.aws_caller_identity.current.account_id
+        }
       }
     }]
   })
