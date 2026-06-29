@@ -223,8 +223,6 @@ describe("runRm", () => {
     const deleted = s3mock
       .commandCalls(DeleteObjectsCommand)[0]
       .args[0].input.Delete?.Objects?.map((o) => o.Key);
-    expect(deleted).toContain("doc1/index.html");
-    expect(deleted).toContain("_meta/doc1.json");
-    expect(deleted).not.toContain("_meta/team/q1/report.json");
+    expect(deleted).toEqual(["doc1/index.html", "_meta/doc1.json"]);
   });
 });
