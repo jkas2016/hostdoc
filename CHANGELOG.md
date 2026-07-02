@@ -1,3 +1,23 @@
+# [1.2.0](https://github.com/jkas2016/hostdoc/compare/v1.1.1...v1.2.0) (2026-07-02)
+
+
+### Bug Fixes
+
+* clean up nested child _meta sidecars on prefix delete/overwrite ([#37](https://github.com/jkas2016/hostdoc/issues/37)) ([#40](https://github.com/jkas2016/hostdoc/issues/40)) ([a18b42b](https://github.com/jkas2016/hostdoc/commit/a18b42be50c2e50d8adf900c3df89ef3a78f7976)), closes [#7](https://github.com/jkas2016/hostdoc/issues/7)
+* rm/open이 기본 랜덤 코드(대문자 포함)를 거부하는 버그 ([#33](https://github.com/jkas2016/hostdoc/issues/33)) ([#34](https://github.com/jkas2016/hostdoc/issues/34)) ([ef27f7d](https://github.com/jkas2016/hostdoc/commit/ef27f7d31589b28ba339331d21cc3e7491a379e0))
+* uniform code generation + dedup infra preamble/template list ([#21](https://github.com/jkas2016/hostdoc/issues/21)) ([#35](https://github.com/jkas2016/hostdoc/issues/35)) ([0182153](https://github.com/jkas2016/hostdoc/commit/018215317b70bea84497b8f8628d9dce54c6df8d))
+
+
+### Features
+
+* add --version / -v flag to the CLI ([0d2b5a6](https://github.com/jkas2016/hostdoc/commit/0d2b5a6c4345c321bebfe013cd94db87dc393dd7))
+* nested/multi-segment custom paths in publish/rm/open ([#38](https://github.com/jkas2016/hostdoc/issues/38)) ([a18ff4c](https://github.com/jkas2016/hostdoc/commit/a18ff4c17db5ef8b66fd002ba836490feaf7ebea)), closes [#37](https://github.com/jkas2016/hostdoc/issues/37)
+
+
+### Performance Improvements
+
+* parallelize independent I/O in publish (uploads + walk) ([#19](https://github.com/jkas2016/hostdoc/issues/19)) ([#32](https://github.com/jkas2016/hostdoc/issues/32)) ([e5532e6](https://github.com/jkas2016/hostdoc/commit/e5532e618c52f52b34d3cfdeae46896999f20c39))
+
 ## [1.1.1](https://github.com/jkas2016/hostdoc/compare/v1.1.0...v1.1.1) (2026-06-25)
 
 
