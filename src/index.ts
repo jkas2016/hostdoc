@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { readFileSync } from "node:fs";
 import { Command, type OptionValues } from "commander";
 import { runSetup } from "./commands/setup.js";
 import { runInit } from "./commands/init.js";
@@ -11,10 +12,18 @@ import { runRm } from "./commands/rm.js";
 import { runOpen, openPublishedUrl } from "./commands/open.js";
 import { describeConfig } from "./commands/config.js";
 
+// package.json lives outside rootDir (src), so read it at runtime instead of
+// importing it. From dist/index.js or src/index.ts, `../package.json` is the
+// package root's manifest in both the built and dev (tsx) entry points.
+const { version } = JSON.parse(
+  readFileSync(new URL("../package.json", import.meta.url), "utf8"),
+) as { version: string };
+
 const program = new Command();
 program
   .name("hostdoc")
-  .description("Publish a local HTML file or folder to your own AWS and get a short link.");
+  .description("Publish a local HTML file or folder to your own AWS and get a short link.")
+  .version(version, "-v, --version", "output the version number");
 
 function fail(err: unknown): never {
   console.error(`Error: ${(err as Error).message}`);
